@@ -13,7 +13,7 @@ float longitude_0 = 37.36;
 
 float R_Earth = 6.371 * pow(10, 6);
 float R_latitude = (R_Earth * (1 - pow(M_E, 2))) / pow(1 - pow(M_E, 2) * pow(sin(latitude_0), 2), 3 / 2);
-float R_longitude = (R_Earth * (1 - pow(M_E, 2))) / pow(1 - pow(M_E, 2) * pow(sin(longitude_0), 2), 1 / 2);
+float  R_longitude = (R_Earth * (1 - pow(M_E, 2))) / pow(1 - pow(M_E, 2) * pow(sin(longitude_0), 2), 1 / 2);
 
 float C_0;
 
@@ -132,9 +132,8 @@ int main()
 {
     //setlocale(LC_ALL, "ru");
     // Путь к документу
-    //string path = "C:\\Users\\SkyDance\\Desktop\\Inertial_navigation_system\\data\\20170922_Cessna172_200Hz_Ref.txt";
-    string path = "C:\\Users\\SkyDance\\Desktop\\Inertial_navigation_system\\data\\test_data.txt";
-
+    //string path = "test_data.txt";
+    string path = "20170922_Cessna172_200Hz_Ref.txt";
     ifstream Fin;
     Fin.open(path);
 
@@ -185,11 +184,9 @@ int main()
                 //aZ
                 Acc_matrix_BL[2][0] = stof(token);   
             }
-
-            
         }
 
-        cout << numLines << "    " << "omegaX = " << Gyro_matrix_BL[0][0] << "   " << "omegaY = " << Gyro_matrix_BL[1][0] << "   " << "omegaZ = " << Gyro_matrix_BL[2][0] << endl;
+        //cout << numLines << "    " << "omegaX = " << Gyro_matrix_BL[0][0] << "   " << "omegaY = " << Gyro_matrix_BL[1][0] << "   " << "omegaZ = " << Gyro_matrix_BL[2][0] << endl;
 
         if(numLines == 1){
             PITCH_0 = -Acc_matrix_BL[0][0] / g;
@@ -218,9 +215,34 @@ int main()
             YAW = atan(fmod((NEW_LL_MATRIX[0][1] / NEW_LL_MATRIX[1][1]), 360.0));//(NEW_LL_MATRIX[0][1] / NEW_LL_MATRIX[1][1]);
 
         }
-        //написать для других строк с опрделением ненулевой матрицы перехода
-        //else
+        
+        else{
+            PITCH_0 = PITCH;
+            ROLL_0 = ROLL;
+            YAW_0 = YAW;
+            //cout << wE << "    " << wN << "    " << wUp << endl;
+            cout << PITCH_0 << "    " << ROLL_0 << "    " << YAW_0 << "    " << X << "    " << Y << endl;
 
+            bodyToLocal(Acc_matrix_BL[0][0], Acc_matrix_BL[1][0], Acc_matrix_BL[2][0]);
+            
+
+            X = getX(Acc_matrix_ENUp[0][0]);
+            Y = getY(Acc_matrix_ENUp[1][0]);
+            //Z = getZ(Acc_matrix_ENUp[2][0]);
+
+            //calculate angular velocity
+            wE = -velocityY / R_latitude;
+            wN = velocityX / R_longitude;
+            wUp = velocityX / R_longitude * tan(latitude_0);
+
+            Poisson();
+
+            C_0 = sqrt(((NEW_LL_MATRIX[2][0] * NEW_LL_MATRIX[2][0]) + (NEW_LL_MATRIX[2][2] * NEW_LL_MATRIX[2][2])));
+
+            PITCH = atan(fmod((NEW_LL_MATRIX[2][1] / C_0), 90.0));//(NEW_LL_MATRIX[2][1] / C_0);
+            ROLL = atan(fmod((NEW_LL_MATRIX[2][0] / NEW_LL_MATRIX[2][2]), 180.0));//(NEW_LL_MATRIX[2][0] / NEW_LL_MATRIX[2][2]);
+            YAW = atan(fmod((NEW_LL_MATRIX[0][1] / NEW_LL_MATRIX[1][1]), 360.0));//(NEW_LL_MATRIX[0][1] / NEW_LL_MATRIX[1][1]);
+        }
     }
 
     Fin.close();
