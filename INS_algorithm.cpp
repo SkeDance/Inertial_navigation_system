@@ -6,6 +6,9 @@
 
 using namespace std;
 
+bool alignment_flag = 0;
+bool flag = 0;
+
 const float g = 9.81;
 //shirota & dolgota / f % a
 float latitude_0 = 55.44;
@@ -43,15 +46,15 @@ float matrix_W_B[3][3]; //3x3 матрица показаний ДУСов
 float matrix_W_LL[3][3]; //матрица посчитанных угловых скоростей из показаний акслерометра
 
 float matrix(int i, int j){
-    matrix_LL[0][0] = cos(ROLL_0) * cos(YAW_0) + sin(PITCH_0) * sin(ROLL_0) * sin(YAW_0);
-    matrix_LL[0][1] = -cos(ROLL_0) * sin(YAW_0) + sin(PITCH_0) * sin(ROLL_0) * cos(YAW_0);
-    matrix_LL[0][2] = cos(PITCH_0) * sin(ROLL_0);
-    matrix_LL[1][0] = cos(PITCH_0) * sin(YAW_0);
-    matrix_LL[1][1] = cos(PITCH_0) * cos(YAW_0);
-    matrix_LL[1][2] = sin(PITCH_0);
-    matrix_LL[2][0] = sin(ROLL_0) * cos(YAW_0) - sin(PITCH_0) * cos(ROLL_0) * sin(YAW_0);
-    matrix_LL[2][1] = -sin(ROLL_0) * sin(YAW_0) - sin(PITCH_0) * cos(ROLL_0) * sin(YAW_0);
-    matrix_LL[2][2] = cos(PITCH_0) * cos(ROLL_0);
+    matrix_LL[0][0] = cos(ROLL) * cos(YAW) + sin(PITCH) * sin(ROLL) * sin(YAW);
+    matrix_LL[0][1] = -cos(ROLL) * sin(YAW) + sin(PITCH) * sin(ROLL) * cos(YAW);
+    matrix_LL[0][2] = cos(PITCH) * sin(ROLL);
+    matrix_LL[1][0] = cos(PITCH) * sin(YAW);
+    matrix_LL[1][1] = cos(PITCH) * cos(YAW);
+    matrix_LL[1][2] = sin(PITCH);
+    matrix_LL[2][0] = sin(ROLL) * cos(YAW) - sin(PITCH) * cos(ROLL) * sin(YAW);
+    matrix_LL[2][1] = -sin(ROLL) * sin(YAW) - sin(PITCH) * cos(ROLL) * sin(YAW);
+    matrix_LL[2][2] = cos(PITCH) * cos(ROLL);
     return matrix_LL[i][j];
 }
 
@@ -100,8 +103,8 @@ float getX(float accel){
     prev_velocityX = velocityX;
     velocityX += (((current_aX + previous_aX) / 2 ) * 0.01);
     //checkout logic of math operations below - divide and integrate
-    X = latitude_0;
-    X += ((((velocityX + prev_velocityX)  / 2 ) * 0.01) / R_latitude);
+    //X = latitude_0;
+    //X += ((((velocityX + prev_velocityX)  / 2 ) * 0.01) / R_latitude);
     return X;
 }
   
@@ -111,8 +114,8 @@ float getX(float accel){
     prev_velocityY = velocityY;
     velocityY += (((current_aY + previous_aY) / 2 ) * 0.01);
     //checkout logic of math operations below - divide and integrate
-    Y = longitude_0;
-    Y += ((((velocityY + prev_velocityY) / 2 ) * 0.01) / R_longitude);
+    //Y = longitude_0;
+    //Y += ((((velocityY + prev_velocityY) / 2 ) * 0.01) / R_longitude);
     return Y;
 }
 
@@ -187,61 +190,54 @@ int main()
         }
 
         //cout << numLines << "    " << "omegaX = " << Gyro_matrix_BL[0][0] << "   " << "omegaY = " << Gyro_matrix_BL[1][0] << "   " << "omegaZ = " << Gyro_matrix_BL[2][0] << endl;
-
-        if(numLines == 1){
+        //alignment
+        if(Gyro_matrix_BL[0][0] == 0){
+            alignment_flag = 1;
             PITCH_0 = -Acc_matrix_BL[0][0] / g;
             ROLL_0 = -Acc_matrix_BL[1][0] / g;
             YAW_0 = -atan(Gyro_matrix_BL[0][0] / Gyro_matrix_BL[1][0]);
             cout << PITCH_0 << "    " << ROLL_0 << "    " << YAW_0 << endl;
+        }
 
-            bodyToLocal(Acc_matrix_BL[0][0], Acc_matrix_BL[1][0], Acc_matrix_BL[2][0]);
-            
+        if(Gyro_matrix_BL[0][0] != 0){
+            if(flag == 0){
+                flag = 1;
+                PITCH = PITCH_0;
+                ROLL = ROLL_0;
+                YAW = YAW_0;
+                cout << PITCH << "    " << ROLL << "    " << YAW << endl;
+            }
+            else{
 
-            X = getX(Acc_matrix_ENUp[0][0]);
-            Y = getY(Acc_matrix_ENUp[1][0]);
-            //Z = getZ(Acc_matrix_ENUp[2][0]);
+                //cout << wE << "    " << wN << "    " << wUp << endl;
+                cout << PITCH << "    " << ROLL << "    " << YAW << endl;
 
-            //calculate angular velocity
-            wE = -velocityY / R_latitude;
-            wN = velocityX / R_longitude;
-            wUp = velocityX / R_longitude * tan(latitude_0);
+                bodyToLocal(Acc_matrix_BL[0][0], Acc_matrix_BL[1][0], Acc_matrix_BL[2][0]);
+                
 
-            Poisson();
+                X = getX(Acc_matrix_ENUp[0][0]);
+                Y = getY(Acc_matrix_ENUp[1][0]);
 
-            C_0 = sqrt(((NEW_LL_MATRIX[2][0] * NEW_LL_MATRIX[2][0]) + (NEW_LL_MATRIX[2][2] * NEW_LL_MATRIX[2][2])));
+                Poisson();
 
-            PITCH = atan(fmod((NEW_LL_MATRIX[2][1] / C_0), 90.0));//(NEW_LL_MATRIX[2][1] / C_0);
-            ROLL = atan(fmod((NEW_LL_MATRIX[2][0] / NEW_LL_MATRIX[2][2]), 180.0));//(NEW_LL_MATRIX[2][0] / NEW_LL_MATRIX[2][2]);
-            YAW = atan(fmod((NEW_LL_MATRIX[0][1] / NEW_LL_MATRIX[1][1]), 360.0));//(NEW_LL_MATRIX[0][1] / NEW_LL_MATRIX[1][1]);
+                C_0 = sqrt(((NEW_LL_MATRIX[2][0] * NEW_LL_MATRIX[2][0]) + (NEW_LL_MATRIX[2][2] * NEW_LL_MATRIX[2][2])));
 
+                PITCH = atan(fmod((NEW_LL_MATRIX[2][1] / C_0), 90.0));//(NEW_LL_MATRIX[2][1] / C_0);
+                ROLL = atan(fmod((NEW_LL_MATRIX[2][0] / NEW_LL_MATRIX[2][2]), 180.0));//(NEW_LL_MATRIX[2][0] / NEW_LL_MATRIX[2][2]);
+                YAW = atan(fmod((NEW_LL_MATRIX[0][1] / NEW_LL_MATRIX[1][1]), 360.0));//(NEW_LL_MATRIX[0][1] / NEW_LL_MATRIX[1][1]);
+            }
         }
         
         else{
-            PITCH_0 = PITCH;
-            ROLL_0 = ROLL;
-            YAW_0 = YAW;
-            //cout << wE << "    " << wN << "    " << wUp << endl;
-            cout << PITCH_0 << "    " << ROLL_0 << "    " << YAW_0 << "    " << X << "    " << Y << endl;
-
-            bodyToLocal(Acc_matrix_BL[0][0], Acc_matrix_BL[1][0], Acc_matrix_BL[2][0]);
             
-
-            X = getX(Acc_matrix_ENUp[0][0]);
-            Y = getY(Acc_matrix_ENUp[1][0]);
             //Z = getZ(Acc_matrix_ENUp[2][0]);
 
             //calculate angular velocity
-            wE = -velocityY / R_latitude;
-            wN = velocityX / R_longitude;
-            wUp = velocityX / R_longitude * tan(latitude_0);
+            //wE = -velocityY / R_latitude;
+            //wN = velocityX / R_longitude;
+            //wUp = velocityX / R_longitude * tan(latitude_0);
 
-            Poisson();
-
-            C_0 = sqrt(((NEW_LL_MATRIX[2][0] * NEW_LL_MATRIX[2][0]) + (NEW_LL_MATRIX[2][2] * NEW_LL_MATRIX[2][2])));
-
-            PITCH = atan(fmod((NEW_LL_MATRIX[2][1] / C_0), 90.0));//(NEW_LL_MATRIX[2][1] / C_0);
-            ROLL = atan(fmod((NEW_LL_MATRIX[2][0] / NEW_LL_MATRIX[2][2]), 180.0));//(NEW_LL_MATRIX[2][0] / NEW_LL_MATRIX[2][2]);
-            YAW = atan(fmod((NEW_LL_MATRIX[0][1] / NEW_LL_MATRIX[1][1]), 360.0));//(NEW_LL_MATRIX[0][1] / NEW_LL_MATRIX[1][1]);
+            
         }
     }
 
