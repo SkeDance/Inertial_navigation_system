@@ -22,18 +22,34 @@ float C_0;
 
 float wX, wY, wZ;
 float aX, aY, aZ;
-float PITCH_0, ROLL_0, YAW_0;
-float PITCH, ROLL, YAW;
+
+float PITCH_0 = 0;
+float ROLL_0 = 0;
+float YAW_0 = 0;
+
+float PITCH = 0;
+float ROLL = 0;
+float YAW = 0;
 
 float wE, wN, wUp;
 
-float current_aX, previous_aX;
-float current_aY, previous_aY;
-float current_aZ, previous_aZ;
+float current_aX = 0;
+float previous_aX = 0;
 
-float velocityX, prev_velocityX;
-float velocityY, prev_velocityY;
-float velocityZ, prev_velocityZ;
+float current_aY = 0; 
+float previous_aY = 0;
+
+float current_aZ = 0; 
+float previous_aZ = 0;
+
+float velocityX = 0;
+float prev_velocityX = 0;
+
+float velocityY = 0;
+float prev_velocityY = 0;
+
+float velocityZ = 0; 
+float prev_velocityZ = 0;
 
 float X, Y, Z;
 
@@ -101,10 +117,10 @@ float getX(float accel){
     previous_aX = current_aX;
     current_aX = accel;
     prev_velocityX = velocityX;
-    velocityX += (((current_aX + previous_aX) / 2 ) * 0.01);
+    velocityX += (((current_aX + previous_aX) / 2 ) * 0.005);
     //checkout logic of math operations below - divide and integrate
-    //X = latitude_0;
-    //X += ((((velocityX + prev_velocityX)  / 2 ) * 0.01) / R_latitude);
+    X = latitude_0;
+    X += ((((velocityX + prev_velocityX)  / 2 ) * 0.005) / R_latitude);
     return X;
 }
   
@@ -112,15 +128,15 @@ float getX(float accel){
     previous_aY = current_aY;
     current_aY = accel;
     prev_velocityY = velocityY;
-    velocityY += (((current_aY + previous_aY) / 2 ) * 0.01);
+    velocityY += (((current_aY + previous_aY) / 2 ) * 0.005);
     //checkout logic of math operations below - divide and integrate
-    //Y = longitude_0;
-    //Y += ((((velocityY + prev_velocityY) / 2 ) * 0.01) / R_longitude);
+    Y = longitude_0;
+    Y += ((((velocityY + prev_velocityY) / 2 ) * 0.005) / R_longitude);
     return Y;
 }
 
 float Poisson(int i, int j){
-    float NEW_LL_MATRIX[3][3]; // новая матрица, которая используется для перевода в систему ENUp на последующих тактах работы алгоритма
+    float NEW_LL_MATRIX[3][3] = {0}; // новая матрица, которая используется для перевода в систему ENUp на последующих тактах работы алгоритма
     for(int i = 0, j = 0, k = 0; i <= 2; i++){
       for(; j <= 2; j++){
         for(; k <= 2; k++){
@@ -135,7 +151,7 @@ float Poisson(int i, int j){
 
 int main()
 {
-    int latitude = 0;
+    float latitude = 0;
     //setlocale(LC_ALL, "ru");
     // Путь к документу
     //string path = "test_data.txt";
@@ -218,13 +234,12 @@ int main()
             else{
 
                 //cout << wE << "    " << wN << "    " << wUp << endl;
-                cout << PITCH << "    " << ROLL << "    " << YAW << endl;
 
                 bodyToLocal(Acc_matrix_BL[0][0], Acc_matrix_BL[1][0], Acc_matrix_BL[2][0], 0, 0);
                 
 
-                // X = getX(Acc_matrix_ENUp[0][0]);
-                // Y = getY(Acc_matrix_ENUp[1][0]);
+                X = getX(bodyToLocal(Acc_matrix_BL[0][0], Acc_matrix_BL[1][0], Acc_matrix_BL[2][0], 0, 0));
+                Y = getY(bodyToLocal(Acc_matrix_BL[0][0], Acc_matrix_BL[1][0], Acc_matrix_BL[2][0], 1, 0));
                 //Z = getZ(Acc_matrix_ENUp[2][0]);
 
                 R_latitude = (R_Earth * (1 - pow(M_E, 2))) / pow(1 - pow(M_E, 2) * pow(sin(latitude_0), 2), 3 / 2);
@@ -240,9 +255,11 @@ int main()
 
                 C_0 = sqrt(((Poisson(2, 0) * Poisson(2, 0)) + (Poisson(2, 2) * Poisson(2, 2))));
 
-                PITCH = atan(fmod((Poisson(2, 1) / C_0), 90.0));//(NEW_LL_MATRIX[2][1] / C_0);
-                ROLL = atan(fmod((Poisson(2, 0) / Poisson(2, 2)), 180.0));//(NEW_LL_MATRIX[2][0] / NEW_LL_MATRIX[2][2]);
-                YAW = atan(fmod((Poisson(0, 1) / Poisson(1, 1)), 360.0));//(NEW_LL_MATRIX[0][1] / NEW_LL_MATRIX[1][1]);
+                PITCH = atan(Poisson(2, 1) / C_0);//(NEW_LL_MATRIX[2][1] / C_0);
+                ROLL = atan2(Poisson(2, 0), Poisson(2, 2));//(NEW_LL_MATRIX[2][0] / NEW_LL_MATRIX[2][2]);
+                YAW = atan2(Poisson(0, 1), Poisson(1, 1)); //fmod(atan2(Poisson(0, 1), Poisson(1, 1)), 360);//((atan(fmod((Poisson(0, 1) / Poisson(1, 1)), 360.0));//(NEW_LL_MATRIX[0][1] / NEW_LL_MATRIX[1][1]);
+
+                cout << PITCH << "    " << ROLL << "    " << YAW << endl;
             }
         }
     }
