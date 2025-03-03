@@ -4,6 +4,8 @@
 #include <sstream>
 #include <math.h>
 
+#define PI 3.14159265
+
 using namespace std;
 
 bool alignment_flag = 0;
@@ -212,7 +214,6 @@ int main()
             }
         }
 
-        //cout << numLines << "    " << "omegaX = " << Gyro_matrix_BL[0][0] << "   " << "omegaY = " << Gyro_matrix_BL[1][0] << "   " << "omegaZ = " << Gyro_matrix_BL[2][0] << endl;
         //alignment
         if(Gyro_matrix_BL[0][0] == 0){
             alignment_flag = 1;
@@ -232,8 +233,6 @@ int main()
                 cout << PITCH << "    " << ROLL << "    " << YAW << endl;
             }
             else{
-
-                //cout << wE << "    " << wN << "    " << wUp << endl;
 
                 bodyToLocal(Acc_matrix_BL[0][0], Acc_matrix_BL[1][0], Acc_matrix_BL[2][0], 0, 0);
                 
@@ -255,9 +254,9 @@ int main()
 
                 C_0 = sqrt(((Poisson(2, 0) * Poisson(2, 0)) + (Poisson(2, 2) * Poisson(2, 2))));
 
-                PITCH = atan(Poisson(2, 1) / C_0);//(NEW_LL_MATRIX[2][1] / C_0);
-                ROLL = atan2(Poisson(2, 0), Poisson(2, 2));//(NEW_LL_MATRIX[2][0] / NEW_LL_MATRIX[2][2]);
-                YAW = atan2(Poisson(0, 1), Poisson(1, 1)); //fmod(atan2(Poisson(0, 1), Poisson(1, 1)), 360);//((atan(fmod((Poisson(0, 1) / Poisson(1, 1)), 360.0));//(NEW_LL_MATRIX[0][1] / NEW_LL_MATRIX[1][1]);
+                PITCH = atan(Poisson(2, 1) / C_0) * 180 / PI;
+                ROLL = atan2(Poisson(2, 0), Poisson(2, 2)) * 180 / PI;
+                YAW = atan2(Poisson(0, 1), Poisson(1, 1)) * 180 / PI; 
 
                 cout << PITCH << "    " << ROLL << "    " << YAW << endl;
             }
