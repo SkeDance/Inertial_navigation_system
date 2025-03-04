@@ -5,6 +5,7 @@
 #include <math.h>
 
 #define PI 3.14159265
+#define ECC 0.081819190842622
 
 using namespace std;
 
@@ -18,7 +19,7 @@ float longitude_0;
 
 float R_Earth = 6.371 * pow(10, 6);
 float R_latitude;  
-float  R_longitude;   
+float R_longitude;   
 
 float C_0;
 
@@ -62,15 +63,15 @@ float matrix_W_B[3][3]; //3x3 матрица показаний ДУСов
 float matrix_W_LL[3][3]; //матрица посчитанных угловых скоростей из показаний акслерометра
 
 float matrix(int i, int j){
-    matrix_LL[0][0] = cos(ROLL) * cos(YAW) + sin(PITCH) * sin(ROLL) * sin(YAW);
-    matrix_LL[0][1] = -cos(ROLL) * sin(YAW) + sin(PITCH) * sin(ROLL) * cos(YAW);
-    matrix_LL[0][2] = cos(PITCH) * sin(ROLL);
-    matrix_LL[1][0] = cos(PITCH) * sin(YAW);
-    matrix_LL[1][1] = cos(PITCH) * cos(YAW);
-    matrix_LL[1][2] = sin(PITCH);
-    matrix_LL[2][0] = sin(ROLL) * cos(YAW) - sin(PITCH) * cos(ROLL) * sin(YAW);
-    matrix_LL[2][1] = -sin(ROLL) * sin(YAW) - sin(PITCH) * cos(ROLL) * sin(YAW);
-    matrix_LL[2][2] = cos(PITCH) * cos(ROLL);
+    matrix_LL[0][0] = cos(ROLL * (PI / 180)) * cos(YAW * (PI / 180)) + sin(PITCH * (PI / 180)) * sin(ROLL * (PI / 180)) * sin(YAW * (PI / 180));
+    matrix_LL[0][1] = -cos(ROLL * (PI / 180)) * sin(YAW * (PI / 180)) + sin(PITCH * (PI / 180)) * sin(ROLL * (PI / 180)) * cos(YAW * (PI / 180));
+    matrix_LL[0][2] = cos(PITCH * (PI / 180)) * sin(ROLL * (PI / 180));
+    matrix_LL[1][0] = cos(PITCH * (PI / 180)) * sin(YAW * (PI / 180));
+    matrix_LL[1][1] = cos(PITCH * (PI / 180)) * cos(YAW * (PI / 180));
+    matrix_LL[1][2] = sin(PITCH * (PI / 180));
+    matrix_LL[2][0] = sin(ROLL * (PI / 180)) * cos(YAW * (PI / 180)) - sin(PITCH * (PI / 180)) * cos(ROLL * (PI / 180)) * sin(YAW * (PI / 180));
+    matrix_LL[2][1] = -sin(ROLL * (PI / 180)) * sin(YAW * (PI / 180)) - sin(PITCH * (PI / 180)) * cos(ROLL * (PI / 180)) * sin(YAW * (PI / 180));
+    matrix_LL[2][2] = cos(PITCH * (PI / 180)) * cos(ROLL * (PI / 180));
     return matrix_LL[i][j];
 }
 
@@ -101,9 +102,9 @@ float matrix_W_ENUp(int i, int j){
 }
 
 float bodyToLocal(float aX, float aY, float aZ, int i, int j){
-    Acc_matrix_BL[0][0] = aX;
-    Acc_matrix_BL[1][0] = aY;
-    Acc_matrix_BL[2][0] = aZ;
+    // Acc_matrix_BL[0][0] = aX;
+    // Acc_matrix_BL[1][0] = aY;
+    // Acc_matrix_BL[2][0] = aZ;
     float Acc_matrix_ENUp[3][1] = {0, 0, 0}; //матрица ускорений в системе ENUp
     for(int i = 0, j = 0, k = 0; j <= 2; j++){
         while(k <= 2){
@@ -121,7 +122,9 @@ float getX(float accel){
     prev_velocityX = velocityX;
     velocityX += (((current_aX + previous_aX) / 2 ) * 0.005);
     //checkout logic of math operations below - divide and integrate
-    X = latitude_0;
+    if(alignment_flag == 0){
+        X = latitude_0;
+    }
     X += ((((velocityX + prev_velocityX)  / 2 ) * 0.005) / R_latitude);
     return X;
 }
@@ -132,7 +135,9 @@ float getX(float accel){
     prev_velocityY = velocityY;
     velocityY += (((current_aY + previous_aY) / 2 ) * 0.005);
     //checkout logic of math operations below - divide and integrate
-    Y = longitude_0;
+    if(alignment_flag == 0){
+        Y = longitude_0;
+    }
     Y += ((((velocityY + prev_velocityY) / 2 ) * 0.005) / R_longitude);
     return Y;
 }
@@ -208,18 +213,28 @@ int main()
                 //aZ
                 Acc_matrix_BL[2][0] = stof(token);   
             }
-            if(tokenCount == 13){
-                //shirota
-                latitude_0 = stof(token);
+
+            if(alignment_flag == 0){
+
+                if(tokenCount == 13){
+                    //shirota
+                    latitude_0 = stof(token);
+                }
+
+                if(tokenCount == 14){
+                    //dolgota
+                    longitude_0 = stof(token);
+                }
             }
         }
 
         //alignment
         if(Gyro_matrix_BL[0][0] == 0){
             alignment_flag = 1;
+            latitude = latitude_0;
             PITCH_0 = -Acc_matrix_BL[0][0] / g;
             ROLL_0 = -Acc_matrix_BL[1][0] / g;
-            YAW_0 = -atan(Gyro_matrix_BL[0][0] / Gyro_matrix_BL[1][0]);
+            YAW_0 = -atan(Gyro_matrix_BL[0][0] / Gyro_matrix_BL[1][0]) * 180 / PI;
             cout << PITCH_0 << "    " << ROLL_0 << "    " << YAW_0 << endl;
         }
 
@@ -229,37 +244,32 @@ int main()
                 PITCH = PITCH_0;
                 ROLL = ROLL_0;
                 YAW = YAW_0;
-                latitude = latitude_0;
-                cout << PITCH << "    " << ROLL << "    " << YAW << endl;
             }
-            else{
 
-                bodyToLocal(Acc_matrix_BL[0][0], Acc_matrix_BL[1][0], Acc_matrix_BL[2][0], 0, 0);
-                
+            bodyToLocal(Acc_matrix_BL[0][0], Acc_matrix_BL[1][0], Acc_matrix_BL[2][0], 0, 0);
 
-                X = getX(bodyToLocal(Acc_matrix_BL[0][0], Acc_matrix_BL[1][0], Acc_matrix_BL[2][0], 0, 0));
-                Y = getY(bodyToLocal(Acc_matrix_BL[0][0], Acc_matrix_BL[1][0], Acc_matrix_BL[2][0], 1, 0));
-                //Z = getZ(Acc_matrix_ENUp[2][0]);
+            X = getX(bodyToLocal(Acc_matrix_BL[0][0], Acc_matrix_BL[1][0], Acc_matrix_BL[2][0], 0, 0));
+            Y = getY(bodyToLocal(Acc_matrix_BL[0][0], Acc_matrix_BL[1][0], Acc_matrix_BL[2][0], 1, 0));
+            // Z = getZ(Acc_matrix_ENUp[2][0]);
 
-                R_latitude = (R_Earth * (1 - pow(M_E, 2))) / pow(1 - pow(M_E, 2) * pow(sin(latitude_0), 2), 3 / 2);
-                R_longitude = (R_Earth * (1 - pow(M_E, 2))) / pow(1 - pow(M_E, 2) * pow(sin(latitude_0), 2), 1 / 2);
+            R_latitude = (R_Earth * (1 - pow(ECC, 2))) / pow(1 - pow(ECC, 2) * pow(sin(latitude_0 * 180 / PI), 2), 3 / 2);
+            R_longitude = (R_Earth * (1 - pow(ECC, 2))) / pow(1 - pow(ECC, 2) * pow(sin(latitude_0 * 180 / PI), 2), 1 / 2);
 
+            // calculate angular velocity
+            wE = -velocityY / R_latitude;
+            wN = velocityX / R_longitude;
+            wUp = velocityX / R_longitude * tan(latitude_0 * 180 / PI);
 
-                //calculate angular velocity
-                wE = -velocityY / R_latitude;
-                wN = velocityX / R_longitude;
-                wUp = velocityX / R_longitude * tan(latitude_0);
+            Poisson(0, 0);
 
-                Poisson(0 ,0);
+            C_0 = sqrt(((Poisson(2, 0) * Poisson(2, 0)) + (Poisson(2, 2) * Poisson(2, 2))));
 
-                C_0 = sqrt(((Poisson(2, 0) * Poisson(2, 0)) + (Poisson(2, 2) * Poisson(2, 2))));
+            PITCH = atan(Poisson(2, 1) / C_0) * 180 / PI;
+            ROLL = atan2(Poisson(2, 0), Poisson(2, 2)) * 180 / PI;
+            YAW = atan2(Poisson(0, 1), Poisson(1, 1)) * 180 / PI;
 
-                PITCH = atan(Poisson(2, 1) / C_0) * 180 / PI;
-                ROLL = atan2(Poisson(2, 0), Poisson(2, 2)) * 180 / PI;
-                YAW = atan2(Poisson(0, 1), Poisson(1, 1)) * 180 / PI; 
-
-                cout << PITCH << "    " << ROLL << "    " << YAW << endl;
-            }
+            cout << PITCH << "    " << ROLL << "    " << YAW << endl;
+            cout << "delta" << ((((velocityX + prev_velocityX)  / 2 ) * 0.005) / R_latitude) << endl;
         }
     }
 
