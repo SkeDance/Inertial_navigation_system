@@ -14,7 +14,8 @@ bool flag = 0;
 bool flagX = 0;
 bool flagY = 0;
 
-const float g = 9.81;
+const float g = 9.81523;
+const int U  = 15; // Скорость вращения Земли, град/сек
 //shirota & dolgota / f % a
 double latitude_0 = 0;
 double longitude_0 = 0;
@@ -281,8 +282,8 @@ int main()
 
             // calculate angular velocity
             wE = -velocityY / R_latitude;
-            wN = velocityX / R_longitude;
-            wUp = velocityX / R_longitude * tan(latitude * 180 / PI);
+            wN = velocityX / R_longitude + U * cos(latitude * 180 / PI);
+            wUp = velocityX / R_longitude * tan(latitude * 180 / PI) + U * sin(latitude * 180 / PI);
 
             matrix_W_ENUp(); //составляем матрицу рассчитанных угловых скоростей
             matrix_W_DUS(); //составляем матрицу угловых скоростей из показаний ДУСов
