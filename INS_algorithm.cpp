@@ -15,7 +15,7 @@ bool flagX = 0;
 bool flagY = 0;
 
 const float g = 9.81523;
-const int U  = 15; // Скорость вращения Земли, град/сек
+const int U  = 15 * (PI / 180); // Скорость вращения Земли, рад/сек
 //shirota & dolgota / f % a
 double latitude_0 = 0;
 double longitude_0 = 0;
@@ -127,13 +127,13 @@ void matrix(){
 
 void matrix_W_DUS(){
     matrix_W_B[0][0] = 0;
-    matrix_W_B[0][1] = -Gyro_matrix_BL[2][0];
-    matrix_W_B[0][2] = Gyro_matrix_BL[1][0];
-    matrix_W_B[1][0] = Gyro_matrix_BL[2][0];
+    matrix_W_B[0][1] = -Gyro_matrix_BL[2][0];   //rad/sec
+    matrix_W_B[0][2] = Gyro_matrix_BL[1][0];    //rad/sec  
+    matrix_W_B[1][0] = Gyro_matrix_BL[2][0];    //rad/sec
     matrix_W_B[1][1] = 0;
-    matrix_W_B[1][2] = -Gyro_matrix_BL[0][0];
-    matrix_W_B[2][0] = -Gyro_matrix_BL[1][0];
-    matrix_W_B[2][1] = Gyro_matrix_BL[0][0];
+    matrix_W_B[1][2] = -Gyro_matrix_BL[0][0];   //rad/sec
+    matrix_W_B[2][0] = -Gyro_matrix_BL[1][0];   //rad/sec
+    matrix_W_B[2][1] = Gyro_matrix_BL[0][0];    //rad/sec
     matrix_W_B[2][2] = 0;
 }
 
@@ -209,17 +209,17 @@ int main()
             ++tokenCount;
             if(tokenCount == 2){
                 //wX
-                Gyro_matrix_BL[0][0] = stof(token);
+                Gyro_matrix_BL[0][0] = stof(token) * (PI / 180);    //rad/sec
             }
 
             if(tokenCount == 3){
                 //wY
-                Gyro_matrix_BL[1][0] = stof(token);
+                Gyro_matrix_BL[1][0] = stof(token) * (PI / 180);    //rad/sec
             }
 
             if(tokenCount == 4){
                 //wZ
-                Gyro_matrix_BL[2][0] = stof(token);
+                Gyro_matrix_BL[2][0] = stof(token) * (PI / 180);    //rad/sec
             }
 
             if(tokenCount == 5){
@@ -241,12 +241,12 @@ int main()
 
                 if(tokenCount == 13){
                     //shirota
-                    latitude_0 = stof(token);
+                    latitude_0 = stof(token);   //grad
                 }
 
                 if(tokenCount == 14){
                     //dolgota
-                    longitude_0 = stof(token);
+                    longitude_0 = stof(token);  //grad
                     cout << "Token for longitude_0: " << token << endl; // Вывод токена для проверки
                 }
             }
@@ -256,9 +256,9 @@ int main()
         if(Gyro_matrix_BL[0][0] == 0){
             alignment_flag = 1;
             //latitude = latitude_0;
-            PITCH_0 = -Acc_matrix_BL[0][0] / g;
-            ROLL_0 = -Acc_matrix_BL[1][0] / g;
-            YAW_0 = -atan(Gyro_matrix_BL[0][0] / Gyro_matrix_BL[1][0]) * 180 / PI;
+            PITCH_0 = -Acc_matrix_BL[0][0] / g;     //grad
+            ROLL_0 = -Acc_matrix_BL[1][0] / g;      //grad
+            YAW_0 = -atan(Gyro_matrix_BL[0][0] / Gyro_matrix_BL[1][0]) * 180 / PI; //grad
             cout << PITCH_0 << "    " << ROLL_0 << "    " << YAW_0 << endl;
         }
 
@@ -273,17 +273,17 @@ int main()
 
             bodyToLocal(matrix_LL, Acc_matrix_BL, Acc_matrix_ENUp);
 
-            R_latitude = (R_Earth * (1 - pow(ECC, 2))) / pow(1 - pow(ECC, 2) * pow(sin(latitude * 180 / PI), 2), 3.0 / 2.0);
-            R_longitude = (R_Earth * (1 - pow(ECC, 2))) / pow(1 - pow(ECC, 2) * pow(sin(latitude * 180 / PI), 2), 1.0 / 2.0);
+            R_latitude = (R_Earth * (1 - pow(ECC, 2))) / pow(1 - pow(ECC, 2) * pow(sin(latitude * PI/ 180), 2), 3.0 / 2.0);
+            R_longitude = (R_Earth * (1 - pow(ECC, 2))) / pow(1 - pow(ECC, 2) * pow(sin(latitude * PI/ 180), 2), 1.0 / 2.0);
 
-            latitude = getX(Acc_matrix_ENUp[0][0]);
-            longitude = getY(Acc_matrix_ENUp[1][0]);
+            latitude = getX(Acc_matrix_ENUp[0][0]);     //grad/sec
+            longitude = getY(Acc_matrix_ENUp[1][0]);    //grad/sec 
             //Z = getZ();
 
             // calculate angular velocity
-            wE = -velocityY / R_latitude;
-            wN = velocityX / R_longitude + U * cos(latitude * 180 / PI);
-            wUp = velocityX / R_longitude * tan(latitude * 180 / PI) + U * sin(latitude * 180 / PI);
+            wE = -velocityY / R_latitude; //rad/s
+            wN = velocityX / R_longitude + U * cos(latitude * PI/ 180);
+            wUp = velocityX / R_longitude * tan(latitude * PI/ 180) + U * sin(latitude * PI/ 180);
 
             matrix_W_ENUp(); //составляем матрицу рассчитанных угловых скоростей
             matrix_W_DUS(); //составляем матрицу угловых скоростей из показаний ДУСов
