@@ -16,16 +16,18 @@ bool flagY = 0;
 
 const float g = 9.81523;
 const int U  = 15 * (PI / 180); // Скорость вращения Земли, рад/сек
+double dt = 0.005;
+int t = 1;
 //shirota & dolgota / f % a
-double latitude_0 = 0;
-double longitude_0 = 0;
+double fi_0 = 0;
+double lambda_0 = 0;
 
 double latitude = 0;
 double longitude = 0;
 
 double R_Earth = 6.371 * pow(10, 6);
-double R_latitude;  
-double R_longitude;   
+double R_fi;  
+double R_lambda;   
 
 double C_0;
 
@@ -39,6 +41,23 @@ double YAW_0 = 0;
 double PITCH = 0;
 double ROLL = 0;
 double YAW = 0;
+
+//VN, North channel
+double VN = 0;
+
+double current_VN = 0;
+double previous_VN = 0;
+double integral_VN =0;
+
+////
+
+//VE, East channel
+double VE = 0;
+
+double current_VE = 0;
+double previous_VE = 0;
+double integral_VE =0;
+////
 
 double wE, wN, wUp;
 
@@ -60,7 +79,7 @@ double prev_velocityY = 0;
 double velocityZ = 0; 
 double prev_velocityZ = 0;
 
-double X, Y, Z;
+double fi, lambda, H;
 
 double matrix_LL[3][3]; //матрица для выставки на первом такте 
 
@@ -83,6 +102,68 @@ double normalizeAngle(double degrees) {
         degrees += 360;
     }
     return degrees;
+}
+
+double DegreesToRads(double degree){
+    return degree * PI / 180;
+}
+
+double RadsToDegrees(double rads){
+    return rads * 180 / PI;
+}
+
+double getSpeedVE(double acceleration){
+    previous_aX = current_aX;
+    current_aX = acceleration;
+    VE += (((current_aX + previous_aX) / 2.0 ) * dt);
+    return VE;
+}
+
+double getSpeedVN(double acceleration){
+    previous_aY = current_aY;
+    current_aY = acceleration;
+    VN += (((current_aX + previous_aX) / 2.0 ) * dt);
+    return VN;
+}
+
+double getFi(double speedVN){
+    previous_VN = current_VN;
+    current_VN = speedVN;
+    double avg_speed = ((current_VN + previous_VN) / 2.0);
+    integral_VN += ((avg_speed / R_fi ) * dt);
+    return fi_0 + integral_VN;
+}
+
+double getLambda(double speedVE){
+    previous_VE = current_VE;
+    current_VE = speedVE;
+    double avg_speed = ((current_VE + previous_VE) / 2.0);
+    integral_VE += ((avg_speed / R_lambda * cos(DegreesToRads(fi)) ) * dt);
+    return lambda_0 + integral_VE;
+}
+
+void normalize(double C_B_LL[3][3], int t) {
+    for (int i = 0; i < 3; i++) {
+        double s;
+        
+        if (t % 2 == 0) { // Если такт четный, нормализация по строкам
+            s = sqrt(C_B_LL[i][0] * C_B_LL[i][0] + 
+                     C_B_LL[i][1] * C_B_LL[i][1] + 
+                     C_B_LL[i][2] * C_B_LL[i][2]);
+
+            C_B_LL[i][0] /= s;
+            C_B_LL[i][1] /= s;
+            C_B_LL[i][2] /= s;
+        } else { // Если такт нечетный, нормализация по столбцам
+            s = sqrt(C_B_LL[0][i] * C_B_LL[0][i] + 
+                     C_B_LL[1][i] * C_B_LL[1][i] + 
+                     C_B_LL[2][i] * C_B_LL[2][i]);
+
+            C_B_LL[0][i] /= s;
+            C_B_LL[1][i] /= s;
+            C_B_LL[2][i] /= s;
+        }
+    }
 }
 
 void Poisson(const double a[3][3], const double b[3][3], double result[3][3]) {
@@ -114,15 +195,15 @@ void subtractMatrices(const double matrix1[3][3], const double matrix2[3][3], do
 }
 
 void matrix(){
-    matrix_LL[0][0] = cos(ROLL * (PI / 180)) * cos(YAW * (PI / 180)) + sin(PITCH * (PI / 180)) * sin(ROLL * (PI / 180)) * sin(YAW * (PI / 180));
-    matrix_LL[0][1] = -cos(ROLL * (PI / 180)) * sin(YAW * (PI / 180)) + sin(PITCH * (PI / 180)) * sin(ROLL * (PI / 180)) * cos(YAW * (PI / 180));
-    matrix_LL[0][2] = cos(PITCH * (PI / 180)) * sin(ROLL * (PI / 180));
-    matrix_LL[1][0] = cos(PITCH * (PI / 180)) * sin(YAW * (PI / 180));
-    matrix_LL[1][1] = cos(PITCH * (PI / 180)) * cos(YAW * (PI / 180));
-    matrix_LL[1][2] = sin(PITCH * (PI / 180));
-    matrix_LL[2][0] = sin(ROLL * (PI / 180)) * cos(YAW * (PI / 180)) - sin(PITCH * (PI / 180)) * cos(ROLL * (PI / 180)) * sin(YAW * (PI / 180));
-    matrix_LL[2][1] = -sin(ROLL * (PI / 180)) * sin(YAW * (PI / 180)) - sin(PITCH * (PI / 180)) * cos(ROLL * (PI / 180)) * sin(YAW * (PI / 180));
-    matrix_LL[2][2] = cos(PITCH * (PI / 180)) * cos(ROLL * (PI / 180));
+    matrix_LL[0][0] = cos(DegreesToRads(ROLL)) * cos(DegreesToRads(YAW)) + sin(DegreesToRads(PITCH)) * sin(DegreesToRads(ROLL)) * sin(DegreesToRads(YAW));
+    matrix_LL[0][1] = -cos(DegreesToRads(ROLL)) * sin(DegreesToRads(YAW)) + sin(DegreesToRads(PITCH)) * sin(DegreesToRads(ROLL)) * cos(DegreesToRads(YAW));
+    matrix_LL[0][2] = cos(DegreesToRads(PITCH)) * sin(DegreesToRads(ROLL));
+    matrix_LL[1][0] = cos(DegreesToRads(PITCH)) * sin(DegreesToRads(YAW));
+    matrix_LL[1][1] = cos(DegreesToRads(PITCH)) * cos(DegreesToRads(YAW));
+    matrix_LL[1][2] = sin(DegreesToRads(PITCH));
+    matrix_LL[2][0] = sin(DegreesToRads(ROLL)) * cos(DegreesToRads(YAW)) - sin(DegreesToRads(PITCH)) * cos(DegreesToRads(ROLL)) * sin(DegreesToRads(YAW));
+    matrix_LL[2][1] = -sin(DegreesToRads(ROLL)) * sin(DegreesToRads(YAW)) - sin(DegreesToRads(PITCH)) * cos(DegreesToRads(ROLL)) * sin(DegreesToRads(YAW));
+    matrix_LL[2][2] = cos(DegreesToRads(PITCH)) * cos(DegreesToRads(ROLL));
 }
 
 void matrix_W_DUS(){
@@ -147,37 +228,6 @@ void matrix_W_ENUp(){
     matrix_W_LL[2][0] = -wN;
     matrix_W_LL[2][1] = wE;
     matrix_W_LL[2][2] = 0;
-}
-
-double getX(double accel){
-
-    if(flagX == 0){
-        flagX = 1;
-        latitude = latitude_0;
-    }
-
-    previous_aX = current_aX;
-    current_aX = accel;
-    prev_velocityX = velocityX;
-    velocityX += (((current_aX + previous_aX) / 2.0 ) * 0.005);
-    //checkout logic of math operations below - divide and integrate
-    latitude += ((((velocityX + prev_velocityX)  / 2.0 ) * 0.005) / R_latitude);
-    //X += ((((velocityX + prev_velocityX)  / 2 ) * 0.005) / R_latitude);
-    return latitude;
-}
-  
-double getY(double accel){
-    previous_aY = current_aY;
-    current_aY = accel;
-    prev_velocityY = velocityY;
-    velocityY += (((current_aY + previous_aY) / 2 ) * 0.005);
-    //checkout logic of math operations below - divide and integrate
-    if(flagY == 0){
-        flagY = 1;
-        Y = longitude_0;
-    }
-    Y += ((((velocityY + prev_velocityY) / 2 ) * 0.005) / R_longitude);
-    return Y;
 }
 
 int main()
@@ -209,17 +259,17 @@ int main()
             ++tokenCount;
             if(tokenCount == 2){
                 //wX
-                Gyro_matrix_BL[0][0] = stof(token) * (PI / 180);    //rad/sec
+                Gyro_matrix_BL[0][0] = DegreesToRads(stof(token));  //rad/sec
             }
 
             if(tokenCount == 3){
                 //wY
-                Gyro_matrix_BL[1][0] = stof(token) * (PI / 180);    //rad/sec
+                Gyro_matrix_BL[1][0] = DegreesToRads(stof(token));  //rad/sec
             }
 
             if(tokenCount == 4){
                 //wZ
-                Gyro_matrix_BL[2][0] = stof(token) * (PI / 180);    //rad/sec
+                Gyro_matrix_BL[2][0] = DegreesToRads(stof(token));  //rad/sec
             }
 
             if(tokenCount == 5){
@@ -241,13 +291,13 @@ int main()
 
                 if(tokenCount == 13){
                     //shirota
-                    latitude_0 = stof(token);   //grad
+                    fi_0 = stof(token);   //grad
                 }
 
                 if(tokenCount == 14){
                     //dolgota
-                    longitude_0 = stof(token);  //grad
-                    cout << "Token for longitude_0: " << token << endl; // Вывод токена для проверки
+                    lambda_0 = stof(token);  //grad
+                    std::cout << "Token for longitude_0: " << token << endl; // Вывод токена для проверки
                 }
             }
         }
@@ -258,8 +308,8 @@ int main()
             //latitude = latitude_0;
             PITCH_0 = -Acc_matrix_BL[0][0] / g;     //grad
             ROLL_0 = -Acc_matrix_BL[1][0] / g;      //grad
-            YAW_0 = -atan(Gyro_matrix_BL[0][0] / Gyro_matrix_BL[1][0]) * 180 / PI; //grad
-            cout << PITCH_0 << "    " << ROLL_0 << "    " << YAW_0 << endl;
+            YAW_0 = RadsToDegrees(-atan(Gyro_matrix_BL[0][0] / Gyro_matrix_BL[1][0])); //grad
+            std::cout << PITCH_0 << "    " << ROLL_0 << "    " << YAW_0 << endl;
         }
 
         if(Gyro_matrix_BL[0][0] != 0){
@@ -272,18 +322,22 @@ int main()
             matrix();
 
             bodyToLocal(matrix_LL, Acc_matrix_BL, Acc_matrix_ENUp);
-
-            R_latitude = (R_Earth * (1 - pow(ECC, 2))) / pow(1 - pow(ECC, 2) * pow(sin(latitude * PI/ 180), 2), 3.0 / 2.0);
-            R_longitude = (R_Earth * (1 - pow(ECC, 2))) / pow(1 - pow(ECC, 2) * pow(sin(latitude * PI/ 180), 2), 1.0 / 2.0);
-
-            latitude = getX(Acc_matrix_ENUp[0][0]);     //grad/sec
-            longitude = getY(Acc_matrix_ENUp[1][0]);    //grad/sec 
-            //Z = getZ();
+            
+            VE = getSpeedVE(Acc_matrix_ENUp[0][0]);
+            VN = getSpeedVN(Acc_matrix_ENUp[1][0]);
 
             // calculate angular velocity
-            wE = -velocityY / R_latitude; //rad/s
-            wN = velocityX / R_longitude + U * cos(latitude * PI/ 180);
-            wUp = velocityX / R_longitude * tan(latitude * PI/ 180) + U * sin(latitude * PI/ 180);
+            wE = -VN / R_fi;                                //rad/s
+            wN = VE / R_lambda + U * cos(fi);               //rad/s
+            wUp = VE / R_lambda * tan(fi) + U * sin(fi);    //rad/s
+
+            //Расчет радиусов 
+            R_fi = (R_Earth * (1 - pow(ECC, 2))) / pow(1 - pow(ECC, 2) * pow(sin(fi), 2), 3.0 / 2.0);
+            R_lambda = (R_Earth * (1 - pow(ECC, 2))) / pow(1 - pow(ECC, 2) * pow(sin(fi), 2), 1.0 / 2.0);
+            
+            //Навигация
+            fi = getFi(VE);         //rads
+            lambda = getLambda(VN); //rads
 
             matrix_W_ENUp(); //составляем матрицу рассчитанных угловых скоростей
             matrix_W_DUS(); //составляем матрицу угловых скоростей из показаний ДУСов
@@ -291,20 +345,23 @@ int main()
             Poisson(matrix_LL, matrix_W_B, matrix_first); //расчет - первый элемент уравнения Пуассона
             Poisson(matrix_W_LL, matrix_LL, matrix_second); //расчет - второй элемент уравнеия Пуассона
             subtractMatrices(matrix_first, matrix_second, NEW_LL_MATRIX); //решение уравнения Пуассона
+
+            normalize(matrix_LL, t); 
+            t++; //такт работы
             
+            //Ориентация
             C_0 = sqrt(NEW_LL_MATRIX[2][0] * NEW_LL_MATRIX[2][0] + NEW_LL_MATRIX[2][2] * NEW_LL_MATRIX[2][2]);
+            PITCH = RadsToDegrees(atan(NEW_LL_MATRIX[2][1] / C_0));
+            ROLL = RadsToDegrees(atan2(NEW_LL_MATRIX[2][0], NEW_LL_MATRIX[2][2]));
+            YAW = normalizeAngle(RadsToDegrees(atan2(NEW_LL_MATRIX[0][1], NEW_LL_MATRIX[1][1])));
 
-            PITCH = atan(NEW_LL_MATRIX[2][1] / C_0) * 180 / PI;
-            ROLL = atan2(NEW_LL_MATRIX[2][0], NEW_LL_MATRIX[2][2]) * 180 / PI;
-            YAW = normalizeAngle(atan2(NEW_LL_MATRIX[0][1], NEW_LL_MATRIX[1][1]) * 180 / PI);
-
-            cout << PITCH << "    " << ROLL << "    " << YAW << endl;
+            std::cout << PITCH << "    " << ROLL << "    " << YAW << endl;
         }
     }
 
     Fin.close();
 
-    cout << "Общее количество строк: " << numLines << endl;
+    std::cout << "Общее количество строк: " << numLines << endl;
 
     return 0;
 }
