@@ -57,6 +57,7 @@ double VE = 0;
 double current_VE = 0;
 double previous_VE = 0;
 double integral_VE = 0;
+
 ////
 
 double wE, wN, wUp;
@@ -96,6 +97,7 @@ double matrix_second[3][3]; // второй элемент уравнения П
 
 double NEW_LL_MATRIX[3][3]; // новая матрица, которая используется для перевода в систему ENUp на последующих тактах работы алгоритма
 
+float takt = 0;
 void alignment()
 {
     double g_0 = sqrt(pow(Acc_matrix_BL[0][0], 2) + pow(Acc_matrix_BL[1][0], 2) + pow(Acc_matrix_BL[2][0], 2));
@@ -111,9 +113,6 @@ void alignment()
     matrix_LL[0][0] = (matrix_LL[1][1] * matrix_LL[2][2] - matrix_LL[1][2] * matrix_LL[2][1]);
     matrix_LL[0][1] = (matrix_LL[1][2] * matrix_LL[2][0] - matrix_LL[1][0] * matrix_LL[2][2]);
     matrix_LL[0][2] = (matrix_LL[1][0] * matrix_LL[2][1] - matrix_LL[1][1] * matrix_LL[2][0]);
-    PITCH_0 = atan(matrix_LL[2][1] / sqrt(1 - pow(matrix_LL[2][1], 2)));
-    ROLL_0 = -atan2(matrix_LL[2][0], matrix_LL[2][2]);
-    YAW_0 = atan(matrix_LL[0][1] / matrix_LL[1][1]);
 }
 
 double normalizeAngle(double degrees)
@@ -148,7 +147,7 @@ double getSpeedVN(double acceleration)
 {
     previous_aY = current_aY;
     current_aY = acceleration;
-    VN += (((current_aX + previous_aX) / 2.0) * dt);
+    VN += (((current_aY + previous_aY) / 2.0) * dt);
     return VN;
 }
 
@@ -249,16 +248,16 @@ void subtractMatrices(const double matrix1[3][3], const double matrix2[3][3], do
 }
 
 void matrix()
-{
-    matrix_LL[0][0] = cos(DegreesToRads(ROLL)) * cos(DegreesToRads(YAW)) + sin(DegreesToRads(PITCH)) * sin(DegreesToRads(ROLL)) * sin(DegreesToRads(YAW));
-    matrix_LL[0][1] = -cos(DegreesToRads(ROLL)) * sin(DegreesToRads(YAW)) + sin(DegreesToRads(PITCH)) * sin(DegreesToRads(ROLL)) * cos(DegreesToRads(YAW));
-    matrix_LL[0][2] = cos(DegreesToRads(PITCH)) * sin(DegreesToRads(ROLL));
-    matrix_LL[1][0] = cos(DegreesToRads(PITCH)) * sin(DegreesToRads(YAW));
-    matrix_LL[1][1] = cos(DegreesToRads(PITCH)) * cos(DegreesToRads(YAW));
-    matrix_LL[1][2] = sin(DegreesToRads(PITCH));
-    matrix_LL[2][0] = sin(DegreesToRads(ROLL)) * cos(DegreesToRads(YAW)) - sin(DegreesToRads(PITCH)) * cos(DegreesToRads(ROLL)) * sin(DegreesToRads(YAW));
-    matrix_LL[2][1] = -sin(DegreesToRads(ROLL)) * sin(DegreesToRads(YAW)) - sin(DegreesToRads(PITCH)) * cos(DegreesToRads(ROLL)) * sin(DegreesToRads(YAW));
-    matrix_LL[2][2] = cos(DegreesToRads(PITCH)) * cos(DegreesToRads(ROLL));
+{ 
+    matrix_LL[0][0] = cos(DegreesToRads(ROLL_0)) * cos(DegreesToRads(YAW_0)) + sin(DegreesToRads(PITCH_0)) * sin(DegreesToRads(ROLL_0)) * sin(DegreesToRads(YAW_0));
+    matrix_LL[0][1] = -cos(DegreesToRads(ROLL_0)) * sin(DegreesToRads(YAW_0)) + sin(DegreesToRads(PITCH_0)) * sin(DegreesToRads(ROLL_0)) * cos(DegreesToRads(YAW_0));
+    matrix_LL[0][2] = cos(DegreesToRads(PITCH_0)) * sin(DegreesToRads(ROLL_0));
+    matrix_LL[1][0] = cos(DegreesToRads(PITCH_0)) * sin(DegreesToRads(YAW_0));
+    matrix_LL[1][1] = cos(DegreesToRads(PITCH_0)) * cos(DegreesToRads(YAW_0));
+    matrix_LL[1][2] = sin(DegreesToRads(PITCH_0));
+    matrix_LL[2][0] = sin(DegreesToRads(ROLL_0)) * cos(DegreesToRads(YAW_0)) - sin(DegreesToRads(PITCH_0)) * cos(DegreesToRads(ROLL_0)) * sin(DegreesToRads(YAW_0));
+    matrix_LL[2][1] = -sin(DegreesToRads(ROLL_0)) * sin(DegreesToRads(YAW_0)) - sin(DegreesToRads(PITCH_0)) * cos(DegreesToRads(ROLL_0)) * sin(DegreesToRads(YAW_0));
+    matrix_LL[2][2] = cos(DegreesToRads(PITCH_0)) * cos(DegreesToRads(ROLL_0));
 }
 
 void matrix_W_DUS()
@@ -317,6 +316,11 @@ int main()
         while (iss >> token)
         {
             ++tokenCount;
+            if (tokenCount == 1)
+            {
+                // time
+                takt = stof(token); // rad/sec
+            }
             if (tokenCount == 2)
             {
                 // wX
@@ -355,6 +359,23 @@ int main()
 
             if (alignment_flag == 0)
             {
+                if (tokenCount == 8)
+                {
+                    //крен
+                    ROLL_0 = stof(token); // rads
+                }
+
+                if (tokenCount == 9)
+                {   
+                    //тангаж
+                    PITCH_0 = stof(token); // rads
+                }
+
+                if (tokenCount == 10)
+                {   
+                    //курс
+                    YAW_0 = stof(token); // rads
+                }
 
                 if (tokenCount == 13)
                 {
@@ -372,11 +393,13 @@ int main()
         }
 
         // alignment
-        if (alignment_flag == 0)
+        if (takt < 201.48)
         {
-            alignment_flag = 1;
+            std::cout << "Token for ROLL_0: " << ROLL_0 << endl; // Вывод токена для проверки
+            std::cout << "Token for PITCH_0: " << PITCH_0 << endl; // Вывод токена для проверки
+            std::cout << "Token for YAW_0: " << YAW_0 << endl; // Вывод токена для проверки
 
-            alignment();
+            matrix();
 
             bodyToLocal(matrix_LL, Acc_matrix_BL, Acc_matrix_ENUp);
 
@@ -416,57 +439,57 @@ int main()
 
             std::cout << PITCH << "    " << ROLL << "    " << YAW << endl;
         }
+        else{
+            // Если выставка продолжается, то использовать этот фрагмент
+            // t_start = 201.47
+            // if(Gyro_matrix_BL[0][0] != 0){
+            //     if(flag == 0){
+            //         flag = 1;
+            //         PITCH = PITCH_0;
+            //         ROLL = ROLL_0;
+            //         YAW = YAW_0;
+            //     }
 
-        // Если выставка продолжается, то использовать этот фрагмент
-        // t_start = 201.47
-        // if(Gyro_matrix_BL[0][0] != 0){
-        //     if(flag == 0){
-        //         flag = 1;
-        //         PITCH = PITCH_0;
-        //         ROLL = ROLL_0;
-        //         YAW = YAW_0;
-        //     }
+            // matrix();
 
-        // matrix();
+            bodyToLocal(matrix_LL, Acc_matrix_BL, Acc_matrix_ENUp);
 
-        bodyToLocal(matrix_LL, Acc_matrix_BL, Acc_matrix_ENUp);
+            VE = getSpeedVE(Acc_matrix_ENUp[0][0]);
+            VN = getSpeedVN(Acc_matrix_ENUp[1][0]);
 
-        VE = getSpeedVE(Acc_matrix_ENUp[0][0]);
-        VN = getSpeedVN(Acc_matrix_ENUp[1][0]);
+            // calculate angular velocity
+            wE = -VN / R_fi;                             // rad/s
+            wN = VE / R_lambda + U * cos(fi);            // rad/s
+            wUp = VE / R_lambda * tan(fi) + U * sin(fi); // rad/s
 
-        // calculate angular velocity
-        wE = -VN / R_fi;                             // rad/s
-        wN = VE / R_lambda + U * cos(fi);            // rad/s
-        wUp = VE / R_lambda * tan(fi) + U * sin(fi); // rad/s
+            // Расчет радиусов
+            R_fi = (R_Earth * (1 - pow(ECC, 2))) / pow(1 - pow(ECC, 2) * pow(sin(fi), 2), 3.0 / 2.0);
+            R_lambda = (R_Earth * (1 - pow(ECC, 2))) / pow(1 - pow(ECC, 2) * pow(sin(fi), 2), 1.0 / 2.0);
 
-        // Расчет радиусов
-        R_fi = (R_Earth * (1 - pow(ECC, 2))) / pow(1 - pow(ECC, 2) * pow(sin(fi), 2), 3.0 / 2.0);
-        R_lambda = (R_Earth * (1 - pow(ECC, 2))) / pow(1 - pow(ECC, 2) * pow(sin(fi), 2), 1.0 / 2.0);
+            // Навигация
+            fi = getFi(VE);         // rads
+            lambda = getLambda(VN); // rads
 
-        // Навигация
-        fi = getFi(VE);         // rads
-        lambda = getLambda(VN); // rads
+            matrix_W_ENUp(); // составляем матрицу рассчитанных угловых скоростей
+            matrix_W_DUS();  // составляем матрицу угловых скоростей из показаний ДУСов
 
-        matrix_W_ENUp(); // составляем матрицу рассчитанных угловых скоростей
-        matrix_W_DUS();  // составляем матрицу угловых скоростей из показаний ДУСов
+            Poisson(matrix_LL, matrix_W_B, matrix_first);                 // расчет - первый элемент уравнения Пуассона
+            Poisson(matrix_W_LL, matrix_LL, matrix_second);               // расчет - второй элемент уравнеия Пуассона
+            subtractMatrices(matrix_first, matrix_second, NEW_LL_MATRIX); // решение уравнения Пуассона
 
-        Poisson(matrix_LL, matrix_W_B, matrix_first);                 // расчет - первый элемент уравнения Пуассона
-        Poisson(matrix_W_LL, matrix_LL, matrix_second);               // расчет - второй элемент уравнеия Пуассона
-        subtractMatrices(matrix_first, matrix_second, NEW_LL_MATRIX); // решение уравнения Пуассона
+            UpdateLLMatrix(matrix_LL, NEW_LL_MATRIX);
 
-        UpdateLLMatrix(matrix_LL, NEW_LL_MATRIX);
+            normalize(matrix_LL, t);
+            t++; // такт работы
 
-        normalize(matrix_LL, t);
-        t++; // такт работы
+            // Ориентация
+            C_0 = sqrt(matrix_LL[2][0] * matrix_LL[2][0] + matrix_LL[2][2] * matrix_LL[2][2]);
+            PITCH = RadsToDegrees(atan(matrix_LL[2][1] / C_0));
+            ROLL = RadsToDegrees(atan2(matrix_LL[2][0], matrix_LL[2][2]));
+            YAW = normalizeAngle(RadsToDegrees(atan2(matrix_LL[0][1], matrix_LL[1][1])));
 
-        // Ориентация
-        C_0 = sqrt(matrix_LL[2][0] * matrix_LL[2][0] + matrix_LL[2][2] * matrix_LL[2][2]);
-        PITCH = RadsToDegrees(atan(matrix_LL[2][1] / C_0));
-        ROLL = RadsToDegrees(atan2(matrix_LL[2][0], matrix_LL[2][2]));
-        YAW = normalizeAngle(RadsToDegrees(atan2(matrix_LL[0][1], matrix_LL[1][1])));
-
-        std::cout << PITCH << "    " << ROLL << "    " << YAW << endl;
-        //}
+            std::cout << PITCH << "    " << ROLL << "    " << YAW << endl;
+        }
     }
 
     Fin.close();
