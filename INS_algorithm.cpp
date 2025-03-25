@@ -18,7 +18,7 @@ const float g = 9.81523;
 const double U = 15 * (PI / 180) / 3600; // Скорость вращения Земли, рад/сек
 double dt = 0.005;
 int t = 1;
-// shirota & dolgota / f % a
+// shirota & dolgota
 double fi_0 = 0;
 double lambda_0 = 0;
 
@@ -103,7 +103,6 @@ void alignment()
     double g_0 = sqrt(pow(Acc_matrix_BL[0][0], 2) + pow(Acc_matrix_BL[1][0], 2) + pow(Acc_matrix_BL[2][0], 2));
     double w_dzetta = U * sin(fi_0);
     double w_nu = U * cos(fi_0);
-    // double matrix_LL_0[3][3] = {0}; вернуть и работать с ней, если с одной матрицей matrix_LL не получится
     matrix_LL[2][0] = -Acc_matrix_BL[0][0] / g_0;
     matrix_LL[2][1] = -Acc_matrix_BL[1][0] / g_0;
     matrix_LL[2][2] = -Acc_matrix_BL[2][0] / g_0;
@@ -288,9 +287,6 @@ void matrix_W_ENUp()
 
 int main()
 {
-    // setlocale(LC_ALL, "ru");
-    //  Путь к документу
-    // string path = "test_data.txt";
     string path = "20170922_Cessna172_200Hz_Ref.txt";
     ifstream Fin;
     Fin.open(path);
@@ -319,7 +315,7 @@ int main()
             if (tokenCount == 1)
             {
                 // time
-                takt = stof(token); // rad/sec
+                takt = stof(token);
             }
             if (tokenCount == 2)
             {
@@ -361,44 +357,39 @@ int main()
             {
                 if (tokenCount == 8)
                 {
-                    //крен
-                    ROLL_0 = stof(token); // rads
+                    // крен
+                    ROLL_0 = stof(token); // degrees
                 }
 
                 if (tokenCount == 9)
                 {   
-                    //тангаж
-                    PITCH_0 = stof(token); // rads
+                    // тангаж
+                    PITCH_0 = stof(token); // degrees
                 }
 
                 if (tokenCount == 10)
                 {   
-                    //курс
-                    YAW_0 = stof(token); // rads
+                    // курс
+                    YAW_0 = stof(token); // degrees
                 }
 
                 if (tokenCount == 13)
                 {
-                    // shirota
+                    // широта
                     fi_0 = DegreesToRads(stof(token)); // rads
                 }
 
                 if (tokenCount == 14)
                 {
-                    // dolgota
+                    // долгота
                     lambda_0 = DegreesToRads(stof(token));  //rads
-                    //std::cout << "Token for longitude_0: " << token << endl; // Вывод токена для проверки
                 }
             }
         }
 
         // alignment
-        if (takt < 201.48)
+        if (takt < 201.45) //48
         {
-            //std::cout << "Token for ROLL_0: " << ROLL_0 << endl; // Вывод токена для проверки
-            //std::cout << "Token for PITCH_0: " << PITCH_0 << endl; // Вывод токена для проверки
-            //std::cout << "Token for YAW_0: " << YAW_0 << endl; // Вывод токена для проверки
-
             matrix();
 
             bodyToLocal(matrix_LL, Acc_matrix_BL, Acc_matrix_ENUp);
@@ -440,17 +431,7 @@ int main()
             std::cout << PITCH << "    " << ROLL << "    " << YAW << endl;
         }
         else{
-            // Если выставка продолжается, то использовать этот фрагмент
-            // t_start = 201.47
-            // if(Gyro_matrix_BL[0][0] != 0){
-            //     if(flag == 0){
-            //         flag = 1;
-            //         PITCH = PITCH_0;
-            //         ROLL = ROLL_0;
-            //         YAW = YAW_0;
-            //     }
-
-            // matrix();
+            
             alignment_flag = 1;
 
             bodyToLocal(matrix_LL, Acc_matrix_BL, Acc_matrix_ENUp);
