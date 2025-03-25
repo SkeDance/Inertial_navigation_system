@@ -407,8 +407,11 @@ int main()
 
         // alignment
         if (takt < 201.48) //48
-        {
-            matrix();
+        {   
+            if(flag == 0){
+                matrix();
+                flag == 1;
+            }
 
             bodyToLocal(matrix_LL, Acc_matrix_BL, Acc_matrix_ENUp);
 
