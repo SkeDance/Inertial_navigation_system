@@ -60,7 +60,13 @@ double integral_VE = 0;
 
 ////
 
-double wE, wN, wUp;
+// Vup, Up channel
+
+double VUp = 0;
+
+double wE = 0;
+double wN = 0;
+double wUp = 0;
 
 double current_aX = 0;
 double previous_aX = 0;
@@ -138,16 +144,28 @@ double getSpeedVE(double acceleration)
 {
     previous_aX = current_aX;
     current_aX = acceleration;
-    VE += (((current_aX + previous_aX) / 2.0) * dt);
+    VE += current_aX * dt;
+    //VE += (current_aX - wN * VUp + wUp * VN - U * cos(fi) * VUp + U * sin(fi) * VN) * dt; 
+    //(((((current_aX + previous_aX) / 2.0) + (VN + U * sin(fi) * VN)) * dt)) ;
     return VE;
-}
+}  
 
 double getSpeedVN(double acceleration)
 {
     previous_aY = current_aY;
     current_aY = acceleration;
-    VN += (((current_aY + previous_aY) / 2.0) * dt);
+    VN += current_aY * dt;
+    //VN += (((((current_aY + previous_aY) / 2.0) - (U * sin(fi) * VE))* dt));
+    //VN += (current_aY + wE * VUp - wUp * VE - U * sin(fi) * VE) * dt; 
     return VN;
+}
+
+double getSpeedVUp(double acceleration)
+{   
+    current_aZ = acceleration;
+    VUp += current_aZ * dt;
+    //VUp += (current_aZ - wE * VN + wN * VE + U * cos(fi_0) * VE - g) * dt;
+    return VUp;
 }
 
 double getFi(double speedVN)
@@ -388,7 +406,7 @@ int main()
         }
 
         // alignment
-        if (takt < 201.45) //48
+        if (takt < 201.48) //48
         {
             matrix();
 
@@ -396,6 +414,7 @@ int main()
 
             VE = getSpeedVE(Acc_matrix_ENUp[0][0]);
             VN = getSpeedVN(Acc_matrix_ENUp[1][0]);
+            VUp = getSpeedVUp(Acc_matrix_ENUp[2][0]);
 
             // calculate angular velocity
             wE = -VN / R_fi;                                 // rad/s
