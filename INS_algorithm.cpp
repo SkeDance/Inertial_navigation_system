@@ -15,7 +15,7 @@ bool flagX = 0;
 bool flagY = 0;
 
 const float g = 9.81523;
-const double U = 15 * (PI / 180); // Скорость вращения Земли, рад/сек
+const double U = 15 * (PI / 180) / 3600; // Скорость вращения Земли, рад/сек
 double dt = 0.005;
 int t = 1;
 // shirota & dolgota / f % a
@@ -387,7 +387,7 @@ int main()
                 {
                     // dolgota
                     lambda_0 = DegreesToRads(stof(token));  //rads
-                    std::cout << "Token for longitude_0: " << token << endl; // Вывод токена для проверки
+                    //std::cout << "Token for longitude_0: " << token << endl; // Вывод токена для проверки
                 }
             }
         }
@@ -395,9 +395,9 @@ int main()
         // alignment
         if (takt < 201.48)
         {
-            std::cout << "Token for ROLL_0: " << ROLL_0 << endl; // Вывод токена для проверки
-            std::cout << "Token for PITCH_0: " << PITCH_0 << endl; // Вывод токена для проверки
-            std::cout << "Token for YAW_0: " << YAW_0 << endl; // Вывод токена для проверки
+            //std::cout << "Token for ROLL_0: " << ROLL_0 << endl; // Вывод токена для проверки
+            //std::cout << "Token for PITCH_0: " << PITCH_0 << endl; // Вывод токена для проверки
+            //std::cout << "Token for YAW_0: " << YAW_0 << endl; // Вывод токена для проверки
 
             matrix();
 
@@ -451,6 +451,7 @@ int main()
             //     }
 
             // matrix();
+            alignment_flag = 1;
 
             bodyToLocal(matrix_LL, Acc_matrix_BL, Acc_matrix_ENUp);
 
@@ -488,7 +489,7 @@ int main()
             ROLL = RadsToDegrees(atan2(matrix_LL[2][0], matrix_LL[2][2]));
             YAW = normalizeAngle(RadsToDegrees(atan2(matrix_LL[0][1], matrix_LL[1][1])));
 
-            std::cout << PITCH << "    " << ROLL << "    " << YAW << endl;
+            std::cout << "широта   " << RadsToDegrees(fi) << "  долгота    " << RadsToDegrees(lambda) << "  крен  " << PITCH << "  тангаж   " << ROLL << "  курс  " << YAW << endl;
         }
     }
 
