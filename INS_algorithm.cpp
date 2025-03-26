@@ -173,7 +173,7 @@ double getFi(double speedVN)
     previous_VN = current_VN;
     current_VN = speedVN;
     double avg_speed = ((current_VN + previous_VN) / 2.0);
-    integral_VN += ((avg_speed / R_fi) * dt);
+    integral_VN += ((avg_speed / (R_fi + H)) * dt);
     return fi_0 + integral_VN;
 }
 
@@ -182,7 +182,7 @@ double getLambda(double speedVE)
     previous_VE = current_VE;
     current_VE = speedVE;
     double avg_speed = ((current_VE + previous_VE) / 2.0);
-    integral_VE += ((avg_speed / R_lambda * cos(DegreesToRads(fi))) * dt);
+    integral_VE += ((avg_speed / (R_lambda + H) * cos(DegreesToRads(fi))) * dt);
     return lambda_0 + integral_VE;
 }
 
@@ -371,6 +371,11 @@ int main()
                 Acc_matrix_BL[2][0] = stof(token);
             }
 
+            if (tokenCount == 15){
+                // Height
+                H = stof(token); // metres
+            }
+
             if (alignment_flag == 0)
             {
                 if (tokenCount == 8)
@@ -420,9 +425,9 @@ int main()
             VUp = getSpeedVUp(Acc_matrix_ENUp[2][0]);
 
             // calculate angular velocity
-            wE = -VN / R_fi;                                 // rad/s
-            wN = VE / R_lambda + U * cos(fi_0);              // rad/s
-            wUp = VE / R_lambda * tan(fi_0) + U * sin(fi_0); // rad/s
+            wE = -VN / (R_fi + H);                                 // rad/s
+            wN = VE / (R_lambda + H) + U * cos(fi_0);              // rad/s
+            wUp = VE / (R_lambda + H) * tan(fi_0) + U * sin(fi_0); // rad/s
 
             // Расчет радиусов
             R_fi = (R_Earth * (1 - pow(ECC, 2))) / pow(1 - pow(ECC, 2) * pow(sin(fi_0), 2), 3.0 / 2.0);
