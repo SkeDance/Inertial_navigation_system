@@ -173,7 +173,7 @@ double getFi(double speedVN)
     previous_VN = current_VN;
     current_VN = speedVN;
     double avg_speed = ((current_VN + previous_VN) / 2.0);
-    integral_VN += ((avg_speed / (R_fi + H)) * dt);
+    integral_VN += ((current_VN / (R_fi + H)) * dt);
     return fi_0 + integral_VN;
 }
 
@@ -182,7 +182,7 @@ double getLambda(double speedVE)
     previous_VE = current_VE;
     current_VE = speedVE;
     double avg_speed = ((current_VE + previous_VE) / 2.0);
-    integral_VE += ((avg_speed / (R_lambda + H) * cos(DegreesToRads(fi))) * dt);
+    integral_VE += ((current_VE / ((R_lambda + H) * cos(DegreesToRads(fi)))) * dt);
     return lambda_0 + integral_VE;
 }
 
@@ -309,6 +309,15 @@ int main()
     ifstream Fin;
     Fin.open(path);
 
+    // Файл для записи
+    ofstream fout("calculated_data.txt");
+    if (!fout.is_open()) {
+        cerr << "Ошибка создания файла для записи!" << endl;
+        return 1;
+    }
+    // // Формат данных в файле записи
+    // fout << "Roll[deg] Pitch[deg] Yaw[deg] Latitude[deg] Longitude[deg]\n";
+
     if (!Fin.is_open())
     {
         cerr << "Ошибка открытия файла!" << endl;
@@ -413,10 +422,10 @@ int main()
         // alignment
         if (takt < 201.48) //48
         {   
-            if(flag == 0){
+            ///if(flag == 0){
                 matrix();
-                flag == 1;
-            }
+            //    flag == 1;
+            //}
 
             bodyToLocal(matrix_LL, Acc_matrix_BL, Acc_matrix_ENUp);
 
@@ -455,6 +464,10 @@ int main()
             ROLL = RadsToDegrees(atan2(matrix_LL[2][0], matrix_LL[2][2]));
             YAW = normalizeAngle(RadsToDegrees(atan2(matrix_LL[0][1], matrix_LL[1][1])));
 
+            // Запись в файл
+            fout << ROLL << " " << PITCH << " " << YAW << " " 
+                 << RadsToDegrees(fi) << " " << RadsToDegrees(lambda) << "\n";
+        
             std::cout << PITCH << "    " << ROLL << "    " << YAW << endl;
         }
         else{
@@ -467,9 +480,9 @@ int main()
             VN = getSpeedVN(Acc_matrix_ENUp[1][0]);
 
             // calculate angular velocity
-            wE = -VN / R_fi;                             // rad/s
-            wN = VE / R_lambda + U * cos(fi);            // rad/s
-            wUp = VE / R_lambda * tan(fi) + U * sin(fi); // rad/s
+            wE = -VN / (R_fi + H);                                 // rad/s
+            wN = VE / (R_lambda + H) + U * cos(fi);              // rad/s
+            wUp = VE / (R_lambda + H) * tan(fi) + U * sin(fi); // rad/s
 
             // Расчет радиусов
             R_fi = (R_Earth * (1 - pow(ECC, 2))) / pow(1 - pow(ECC, 2) * pow(sin(fi), 2), 3.0 / 2.0);
@@ -497,11 +510,16 @@ int main()
             ROLL = RadsToDegrees(atan2(matrix_LL[2][0], matrix_LL[2][2]));
             YAW = normalizeAngle(RadsToDegrees(atan2(matrix_LL[0][1], matrix_LL[1][1])));
 
+            // Запись в файл
+            fout << ROLL << " " << PITCH << " " << YAW << " " 
+                 << RadsToDegrees(fi) << " " << RadsToDegrees(lambda) << "\n";
+                
             std::cout << "широта   " << RadsToDegrees(fi) << "  долгота    " << RadsToDegrees(lambda) << "  крен  " << PITCH << "  тангаж   " << ROLL << "  курс  " << YAW << endl;
         }
     }
 
-    Fin.close();
+    Fin.close(); // Закрываем файл после чтения
+    fout.close(); // Закрываем файл после записи
 
     std::cout << "Общее количество строк: " << numLines << endl;
 
