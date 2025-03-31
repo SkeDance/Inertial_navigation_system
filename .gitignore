@@ -1,4 +1,7 @@
 # .gitignore
 
-# Игнорировать все .exe файлы
+# Ignore .exe 
 *.exe
+
+# Ignore .idea
+.idea/
