@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Загрузка расчетных данных
-calc_data = np.loadtxt('output.txt', skiprows=2, delimiter='\t')
+calc_data = np.loadtxt('errors.txt', skiprows=2, delimiter='\t')
 time_calc = calc_data[:, 0] - calc_data[0, 0]  # Нормирование времени
 lat_calc = calc_data[:, 4]                     # Широта
 lon_calc = calc_data[:, 5]                     # Долгота

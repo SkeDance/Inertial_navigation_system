@@ -22,8 +22,14 @@ double dt = 0.005;
 int t = 1;
 
 // errors
-double d_a = 1 * g * pow(10, -3);
-double w_dr = 1 * 0.1 / 3600;
+double d_a = 1 * g * pow(10, -3);       // дрейф акселерометров
+double w_dr = 1 * 0.1 / 3600;           // дрейф ДУСов
+
+double w_M = 0.0002;                         // ошибка масштабных коэффициентов ДУСов
+double a_M = 0.0005;                         // ошибка масштабных коэффициентов акселерометров
+
+double err_Neort = 0.00015;//1.5 * pow(10, -3);   // ошибка неортогональности осей
+
 double FE;
 double FN;
 double FUp;
@@ -120,7 +126,23 @@ double matrix_second[3][3]; // второй элемент уравнения П
 
 double NEW_LL_MATRIX[3][3]; // новая матрица, которая используется для перевода в систему ENUp на последующих тактах работы алгоритма
 
+double Gyro_matrix_BL_E[3][1]; // матрица показаний ДУСов с учетом ошибок
+double Acc_matrix_BL_E[3][1];  // матрица показаний акселерометров с учетом ошибок
+
+double ErrorsMatrixDUS[3][3] = {
+    {1.0 + w_M, err_Neort, err_Neort},
+    {err_Neort, 1.0 + w_M, err_Neort},
+    {err_Neort, err_Neort, 1.0 + w_M}
+};
+
+double ErrorsMatrixAcc[3][3] = {
+    {1.0 + a_M, err_Neort, err_Neort},
+    {err_Neort, 1.0 + a_M, err_Neort},
+    {err_Neort, err_Neort, 1.0 + a_M}
+};
+
 float takt = 0;
+
 void alignment()
 {
     double g_0 = sqrt(pow(Acc_matrix_BL[0][0], 2) + pow(Acc_matrix_BL[1][0], 2) + pow(Acc_matrix_BL[2][0], 2));
@@ -266,6 +288,26 @@ void Poisson(const double a[3][3], const double b[3][3], double result[3][3])
     }
 }
 
+void addErrorsDUS(const double A[3][3], const double B[3][1], double C[3][1]) {
+    for (int i = 0; i < 3; i++) {
+        C[i][0] = 0;
+        for (int k = 0; k < 3; k++) {
+            C[i][0] += B[k][0] * A[i][k]; // Суммируем все компоненты
+        }
+        C[i][0] += DegreesToRads(w_dr); // Добавляем дрейф после суммирования
+    }
+}
+
+void addErrorsAcc(const double A[3][3], const double B[3][1], double C[3][1]) {
+    for (int i = 0; i < 3; i++) {
+        C[i][0] = 0;
+        for (int k = 0; k < 3; k++) {
+            C[i][0] += B[k][0] * A[i][k]; // Суммируем все компоненты
+        }
+        C[i][0] += d_a; // Добавляем дрейф
+    }
+}
+
 void bodyToLocal(const double A[3][3], const double B[3][1], double C[3][1])
 {
     for (int i = 0; i < 3; i++)
@@ -305,13 +347,13 @@ void matrix()
 void matrix_W_DUS()
 {
     matrix_W_B[0][0] = 0;
-    matrix_W_B[0][1] = -Gyro_matrix_BL[2][0]; // rad/sec
-    matrix_W_B[0][2] = Gyro_matrix_BL[1][0];  // rad/sec
-    matrix_W_B[1][0] = Gyro_matrix_BL[2][0];  // rad/sec
+    matrix_W_B[0][1] = -Gyro_matrix_BL_E[2][0]; // rad/sec
+    matrix_W_B[0][2] = Gyro_matrix_BL_E[1][0];  // rad/sec
+    matrix_W_B[1][0] = Gyro_matrix_BL_E[2][0];  // rad/sec
     matrix_W_B[1][1] = 0;
-    matrix_W_B[1][2] = -Gyro_matrix_BL[0][0]; // rad/sec
-    matrix_W_B[2][0] = -Gyro_matrix_BL[1][0]; // rad/sec
-    matrix_W_B[2][1] = Gyro_matrix_BL[0][0];  // rad/sec
+    matrix_W_B[1][2] = -Gyro_matrix_BL_E[0][0]; // rad/sec
+    matrix_W_B[2][0] = -Gyro_matrix_BL_E[1][0]; // rad/sec
+    matrix_W_B[2][1] = Gyro_matrix_BL_E[0][0];  // rad/sec
     matrix_W_B[2][2] = 0;
 }
 
@@ -392,37 +434,37 @@ int main()
             if (tokenCount == 2)
             {
                 // wX
-                Gyro_matrix_BL[0][0] = DegreesToRads(stof(token)) + DegreesToRads(w_dr); // rad/sec
+                Gyro_matrix_BL[0][0] = DegreesToRads(stof(token));// + DegreesToRads(w_dr); // rad/sec
             }
 
             if (tokenCount == 3)
             {
                 // wY
-                Gyro_matrix_BL[1][0] = DegreesToRads(stof(token)) + DegreesToRads(w_dr); // rad/sec
+                Gyro_matrix_BL[1][0] = DegreesToRads(stof(token));// + DegreesToRads(w_dr); // rad/sec
             }
 
             if (tokenCount == 4)
             {
                 // wZ
-                Gyro_matrix_BL[2][0] = DegreesToRads(stof(token)) + DegreesToRads(w_dr); // rad/sec
+                Gyro_matrix_BL[2][0] = DegreesToRads(stof(token));// + DegreesToRads(w_dr); // rad/sec
             }
 
             if (tokenCount == 5)
             {
                 // aX
-                Acc_matrix_BL[0][0] = stof(token) + d_a;
+                Acc_matrix_BL[0][0] = stof(token);// + d_a;
             }
 
             if (tokenCount == 6)
             {
                 // aY
-                Acc_matrix_BL[1][0] = stof(token) + d_a;
+                Acc_matrix_BL[1][0] = stof(token);// + d_a;
             }
 
             if (tokenCount == 7)
             {
                 // aZ
-                Acc_matrix_BL[2][0] = stof(token) + d_a;
+                Acc_matrix_BL[2][0] = stof(token);// + d_a;
             }
 
             if (tokenCount == 15)
@@ -470,9 +512,13 @@ int main()
         {
             if (alignment_flag == 0)
             {
+                // Добавление ошибок 
+                addErrorsDUS(ErrorsMatrixDUS, Gyro_matrix_BL, Gyro_matrix_BL_E);
+                addErrorsAcc(ErrorsMatrixAcc, Acc_matrix_BL, Acc_matrix_BL_E);
+
                 set();
                 // matrix();
-                bodyToLocal(matrix_LL, Acc_matrix_BL, Acc_matrix_ENUp);
+                bodyToLocal(matrix_LL, Acc_matrix_BL_E, Acc_matrix_ENUp);
 
                 VE = getSpeedVE(Acc_matrix_ENUp[0][0]);
                 VN = getSpeedVN(Acc_matrix_ENUp[1][0]);
@@ -525,9 +571,12 @@ int main()
             }
 
             else
-            {
+            {   
+                // Добавление ошибок 
+                addErrorsDUS(ErrorsMatrixDUS, Gyro_matrix_BL, Gyro_matrix_BL_E);
+                addErrorsAcc(ErrorsMatrixAcc, Acc_matrix_BL, Acc_matrix_BL_E);
 
-                bodyToLocal(matrix_LL, Acc_matrix_BL, Acc_matrix_ENUp);
+                bodyToLocal(matrix_LL, Acc_matrix_BL_E, Acc_matrix_ENUp);
 
                 VE = getSpeedVE(Acc_matrix_ENUp[0][0]);
                 VN = getSpeedVN(Acc_matrix_ENUp[1][0]);
@@ -579,9 +628,12 @@ int main()
         }
 
         else
-        {
+        {   
+            // Добавление ошибок 
+            addErrorsDUS(ErrorsMatrixDUS, Gyro_matrix_BL, Gyro_matrix_BL_E);
+            addErrorsAcc(ErrorsMatrixAcc, Acc_matrix_BL, Acc_matrix_BL_E);
 
-            bodyToLocal(matrix_LL, Acc_matrix_BL, Acc_matrix_ENUp);
+            bodyToLocal(matrix_LL, Acc_matrix_BL_E, Acc_matrix_ENUp);
 
             VE = getSpeedVE(Acc_matrix_ENUp[0][0]);
             VN = getSpeedVN(Acc_matrix_ENUp[1][0]);
