@@ -22,16 +22,13 @@ double dt = 0.005;
 int t = 1;
 
 // errors
-double d_a = 1 * g * pow(10, -3);       // дрейф акселерометров
+double d_a = 40 * g * pow(10, -6);      // дрейф акселерометров
 double w_dr = 1 * 0.1 / 3600;           // дрейф ДУСов
 
-double w_M = 0.0002;                         // ошибка масштабных коэффициентов ДУСов
-double a_M = 0.0005;                         // ошибка масштабных коэффициентов акселерометров
+double w_M = 0.00020;                    // ошибка масштабных коэффициентов ДУСов
+double a_M = 0.00008;                    // ошибка масштабных коэффициентов акселерометров
 
-double err_Neort = 0.0003;//1.5 * pow(10, -3);   // ошибка неортогональности осей 
-// 0,15мрад - test 
-// 0,3мрад - calibrated
-// 1,5мрад - uncalibrated
+double err_Neort = 0.00010;             // ошибка неортогональности осей 
 
 double FE;
 double FN;
@@ -164,7 +161,7 @@ void alignment()
 
 double normalizeAngle(double degrees)
 {
-    const double rounding_threshold = 1e-2; // Порог 0.01°
+    const double rounding_threshold = 1e-1; // Порог 0.01°
 
     while (degrees < 0.0)
     {
@@ -520,7 +517,6 @@ int main()
                 addErrorsAcc(ErrorsMatrixAcc, Acc_matrix_BL, Acc_matrix_BL_E);
 
                 set();
-                // matrix();
                 bodyToLocal(matrix_LL, Acc_matrix_BL_E, Acc_matrix_ENUp);
 
                 VE = getSpeedVE(Acc_matrix_ENUp[0][0]);
@@ -567,7 +563,9 @@ int main()
                     << ROLL << "\t"
                     << YAW << "\t"
                     << RadsToDegrees(fi) << "\t"
-                    << RadsToDegrees(lambda) << "\n";
+                    << RadsToDegrees(lambda) << "\t"
+                    << VE << "\t"
+                    << VN << "\n";
 
                 alignment_flag = 1;
                 
@@ -625,8 +623,9 @@ int main()
                     << ROLL << "\t"
                     << YAW << "\t"
                     << RadsToDegrees(fi) << "\t"
-                    << RadsToDegrees(lambda) << "\n";
-
+                    << RadsToDegrees(lambda) << "\t"
+                    << VE << "\t"
+                    << VN << "\n";
             }
         }
 
@@ -680,11 +679,13 @@ int main()
             std::cout << "широта   " << RadsToDegrees(fi) << "  долгота    " << RadsToDegrees(lambda) << "  крен  " << PITCH << "  тангаж   " << ROLL << "  курс  " << YAW << endl;
 
             Fout << takt << "\t"
-                 << PITCH << "\t"
-                 << ROLL << "\t"
-                 << YAW << "\t"
-                 << RadsToDegrees(fi) << "\t"
-                 << RadsToDegrees(lambda) << "\n";
+                    << PITCH << "\t"
+                    << ROLL << "\t"
+                    << YAW << "\t"
+                    << RadsToDegrees(fi) << "\t"
+                    << RadsToDegrees(lambda) << "\t"
+                    << VE << "\t"
+                    << VN << "\n";
         }
     }
 
