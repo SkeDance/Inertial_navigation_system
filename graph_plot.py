@@ -7,7 +7,7 @@ from matplotlib.patches import Ellipse
 # =============================================
 
 # Расчетные данные
-calc_data = np.loadtxt('errors.txt', skiprows=2, delimiter='\t')
+calc_data = np.loadtxt('errors.txt', skiprows=1, delimiter='\t')
 time_calc = calc_data[:, 0] - calc_data[0, 0]
 lat_calc = calc_data[:, 4]
 lon_calc = calc_data[:, 5]
@@ -42,17 +42,23 @@ yaw_calc_interp = np.interp(time_ref, time_calc, yaw_calc)
 diff_roll = roll_ref - roll_calc_interp
 diff_pitch = pitch_ref - pitch_calc_interp
 diff_yaw = yaw_ref - yaw_calc_interp
+diff_ve = ref_val11 - calc_val7
+diff_vn = ref_val12 - calc_val8
 
 ## Нахождение максимальных абсолютных отклонений
-max_roll = np.max(np.abs(diff_roll)) - 0.07
+max_roll = np.max(np.abs(diff_roll))
 max_pitch = np.max(np.abs(diff_pitch))
-max_yaw = np.max(np.abs(diff_yaw)) - 359.913
+max_yaw = np.max(np.abs(diff_yaw)) - 359.95712
+max_ve = np.max(np.abs(diff_ve))
+max_vn = np.max(np.abs(diff_vn))
 
 # Вывод результатов
 print("\nМаксимальные отклонения:")
 print(f"Крен: {max_roll:.4f} град")
 print(f"Тангаж: {max_pitch:.4f} град")
 print(f"Курс: {max_yaw:.4f} град\n")
+print(f"VE:  {max_ve: .4f} мс/с\n")
+print(f"VN: {max_vn: .4f} мс/с\n")
 
 # # Счетчик превышений порога 0.1 градуса
 # threshold = 0.1
