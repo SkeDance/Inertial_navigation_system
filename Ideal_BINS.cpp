@@ -465,7 +465,9 @@ int main()
                     << ROLL << "\t"
                     << YAW << "\t"
                     << RadsToDegrees(fi) << "\t"
-                    << RadsToDegrees(lambda) << "\n";
+                    << RadsToDegrees(lambda) << "\t"
+                    << VE << "\t"
+                    << VN << "\n";
 
                 alignment_flag = 1;
             }
@@ -518,7 +520,9 @@ int main()
                     << ROLL << "\t"
                     << YAW << "\t"
                     << RadsToDegrees(fi) << "\t"
-                    << RadsToDegrees(lambda) << "\n";
+                    << RadsToDegrees(lambda) << "\t"
+                    << VE << "\t"
+                    << VN << "\n";
             }
         }
         else{
@@ -565,11 +569,13 @@ int main()
             std::cout << "широта   " << RadsToDegrees(fi) << "  долгота    " << RadsToDegrees(lambda) << "  крен  " << PITCH << "  тангаж   " << ROLL << "  курс  " << YAW << endl;
 
             Fout << takt << "\t"
-                 << PITCH << "\t"
-                 << ROLL << "\t"
-                 << YAW << "\t"
-                 << RadsToDegrees(fi) << "\t"
-                 << RadsToDegrees(lambda) << "\n";
+                    << PITCH << "\t"
+                    << ROLL << "\t"
+                    << YAW << "\t"
+                    << RadsToDegrees(fi) << "\t"
+                    << RadsToDegrees(lambda) << "\t"
+                    << VE << "\t"
+                    << VN << "\n";
         }
     }
 
