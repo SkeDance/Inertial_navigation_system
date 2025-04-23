@@ -52,13 +52,19 @@ max_yaw = np.max(np.abs(diff_yaw)) - 359.95712
 max_ve = np.max(np.abs(diff_ve))
 max_vn = np.max(np.abs(diff_vn))
 
+# Ошибки по курсу на первом и последнем тактах
+yaw_error_start = diff_yaw[0]
+yaw_error_end = diff_yaw[-1]
+
 # Вывод результатов
 print("\nМаксимальные отклонения:")
 print(f"Крен: {max_roll:.4f} град")
 print(f"Тангаж: {max_pitch:.4f} град")
-print(f"Курс: {max_yaw:.4f} град\n")
-print(f"VE:  {max_ve: .4f} мс/с\n")
-print(f"VN: {max_vn: .4f} мс/с\n")
+print(f"Курс_max: {max_yaw:.4f} град")
+print(f"Курс_0: {yaw_error_start:.4f} град")
+print(f"Курс_end: {yaw_error_end:.4f} град\n")
+print(f"VE:  {max_ve: .4f} м/с")
+print(f"VN: {max_vn: .4f} м/с\n")
 
 # # Счетчик превышений порога 0.1 градуса
 # threshold = 0.1
@@ -237,6 +243,52 @@ plt.title('Сравнение курса', fontsize=14)
 plt.grid(True, linestyle=':', alpha=0.5)
 plt.legend(fontsize=10)
 plt.ylim(yaw_ref.min()-2, 365)
+plt.tight_layout()
+plt.show()
+
+# =============================================
+# Графики ошибок угловых параметров
+# =============================================
+
+# График ошибки крена
+plt.figure(figsize=(14, 5))
+plt.plot(time_ref, diff_roll, 'r-', label='Ошибка крена')
+plt.axhline(y=0.1, color='k', linestyle='--', linewidth=1, label='Допуск ±0.1°')
+plt.axhline(y=-0.1, color='k', linestyle='--', linewidth=1)
+plt.xlabel('Время [с]', fontsize=12)
+plt.ylabel('Ошибка [град]', fontsize=12)
+plt.title('Ошибка крена', fontsize=14)
+plt.grid(True, linestyle=':', alpha=0.5)
+plt.legend(loc='upper right', fontsize=10)
+plt.ylim(-0.15, 0.15)
+plt.tight_layout()
+plt.show()
+
+# График ошибки тангажа
+plt.figure(figsize=(14, 5))
+plt.plot(time_ref, diff_pitch, 'b-', label='Ошибка тангажа')
+plt.axhline(y=0.1, color='k', linestyle='--', linewidth=1, label='Допуск ±0.1°')
+plt.axhline(y=-0.1, color='k', linestyle='--', linewidth=1)
+plt.xlabel('Время [с]', fontsize=12)
+plt.ylabel('Ошибка [град]', fontsize=12)
+plt.title('Ошибка тангажа', fontsize=14)
+plt.grid(True, linestyle=':', alpha=0.5)
+plt.legend(loc='upper right', fontsize=10)
+plt.ylim(-0.15, 0.15)
+plt.tight_layout()
+plt.show()
+
+# График ошибки курса
+plt.figure(figsize=(14, 5))
+plt.plot(time_ref, diff_yaw, 'g-', label='Ошибка курса')
+plt.axhline(y=1.0, color='k', linestyle='--', linewidth=1, label='Допуск ±1.0°')
+plt.axhline(y=-1.0, color='k', linestyle='--', linewidth=1)
+plt.xlabel('Время [с]', fontsize=12)
+plt.ylabel('Ошибка [град]', fontsize=12)
+plt.title('Ошибка курса', fontsize=14)
+plt.grid(True, linestyle=':', alpha=0.5)
+plt.legend(loc='upper right', fontsize=10)
+plt.ylim(-1.5, 1.5)
 plt.tight_layout()
 plt.show()
 
