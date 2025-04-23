@@ -418,9 +418,9 @@ int main()
     switch (type)
     {
         case 0:{
-            cout << "Идеальный алгоритм";
-            d_a = 0 * g * pow(10, -3);      
-            w_dr = 0 * 0.1 / 3600;           
+            cout << "Идеальный алгоритм" << endl;
+            d_a = 0;    
+            w_dr = 0;          
             
             w_M = 0.00000;                    
             a_M = 0.00000;                    
@@ -429,7 +429,7 @@ int main()
             break;
         }
         case 1:{
-            cout << "БЧЭ400";
+            cout << "БЧЭ400" << endl;
             d_a = 1 * g * pow(10, -3);      
             w_dr = 1 * 0.1 / 3600;           
             
@@ -440,7 +440,7 @@ int main()
             break;
         }
         case 2:{
-            cout << "ОИУС200 и АК-6";
+            cout << "ОИУС200 и АК-6" << endl;
             d_a = 60 * g * pow(10, -6);      
             w_dr = 1 * 0.2 / 3600;           
             
@@ -451,7 +451,7 @@ int main()
             break;
         }
         case 3:{
-            cout << "LC_AL-300A и QA3000-030";
+            cout << "LC_AL-300A и QA3000-030 " << endl;
             d_a = 40 * g * pow(10, -6);     
             w_dr = 1 * 0.1 / 3600;           
             
@@ -563,7 +563,12 @@ int main()
         if (t < 40296) // t < 48060 |||| (takt <  201.480000) == (t < 40296)
         {
             if (alignment_flag == 0)
-            {
+            {   
+                // Начальная ошибка курса для каждого комплекта
+                cout << atan((0.1 / 3600.0) / (15.0 * cos(fi_0))) << endl;
+                cout << atan((0.2 / 3600.0) / (15.0 * cos(fi_0))) << endl;
+                cout << atan((0.1 / 3600.0) / (15.0 * cos(fi_0))) << endl;
+
                 // Добавление ошибок 
                 addErrorsDUS(ErrorsMatrixDUS, Gyro_matrix_BL, Gyro_matrix_BL_E);
                 addErrorsAcc(ErrorsMatrixAcc, Acc_matrix_BL, Acc_matrix_BL_E);
