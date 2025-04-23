@@ -1,6 +1,29 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
+from math import radians, sin, cos, sqrt, atan2
+
+
+def haversine(lat1, lon1, lat2, lon2):
+    """
+    Рассчитывает расстояние между двумя точками на сфере
+    (формула гаверсинусов).
+    Возвращает расстояние в километрах.
+    """
+    # Конвертация градусов в радианы
+    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+
+    # Разницы координат
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+
+    # Формула гаверсинусов
+    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+    # Средний радиус Земли в км
+    R = 6371.0
+    return R * c
 
 # =============================================
 # Загрузка и обработка данных
@@ -56,6 +79,34 @@ max_vn = np.max(np.abs(diff_vn))
 yaw_error_start = diff_yaw[0]
 yaw_error_end = diff_yaw[-1]
 
+# Интерполяция расчетных координат
+lat_calc_interp = np.interp(time_ref, time_calc, lat_calc)
+lon_calc_interp = np.interp(time_ref, time_calc, lon_calc)
+
+# Находим индекс 15-й минуты (900 секунд)
+idx_15min = np.argmin(np.abs(time_ref - 900))
+
+# Вычисляем ошибки координат
+error_lat = lat_ref[idx_15min] - lat_calc_interp[idx_15min]
+error_lon = lon_ref[idx_15min] - lon_calc_interp[idx_15min]
+
+# Дополнительно: ошибка в метрах (1° ≈ 111 км)
+lat_error_m = error_lat * 111000  # 1° широты ≈ 111 км
+lon_error_m = error_lon * 111000 * np.cos(np.radians(lat_ref[idx_15min]))
+
+# Находим индекс 15-й минуты (900 секунд)
+idx_15min_ref = np.argmin(np.abs(time_ref - 900))
+idx_15min_calc = np.argmin(np.abs(time_calc - 900))
+
+# Координаты точек
+lat_ref_pt = lat_ref[idx_15min_ref]
+lon_ref_pt = lon_ref[idx_15min_ref]
+lat_calc_pt = lat_calc[idx_15min_calc]
+lon_calc_pt = lon_calc[idx_15min_calc]
+
+# Расчет расстояния
+distance_km = haversine(lat_ref_pt, lon_ref_pt, lat_calc_pt, lon_calc_pt)
+
 # Вывод результатов
 print("\nМаксимальные отклонения:")
 print(f"Крен: {max_roll:.4f} град")
@@ -63,20 +114,17 @@ print(f"Тангаж: {max_pitch:.4f} град")
 print(f"Курс_max: {max_yaw:.4f} град")
 print(f"Курс_0: {yaw_error_start:.4f} град")
 print(f"Курс_end: {yaw_error_end:.4f} град\n")
+print("\nОшибка по координатам на 15-й минуте (900 сек):")
+print(f"Широта: {error_lat:.8f} град | {lat_error_m:.2f} м")
+print(f"Долгота: {error_lon:.8f} град | {lon_error_m:.2f} м")
+print("\nРасстояние между точками на 15-й минуте:")
+print(f"Референсная точка:  {lat_ref_pt:.6f}°, {lon_ref_pt:.6f}°")
+print(f"Расчетная точка:    {lat_calc_pt:.6f}°, {lon_calc_pt:.6f}°")
+print(f"Расстояние: {distance_km:.3f} км")
 print(f"VE:  {max_ve: .4f} м/с")
 print(f"VN: {max_vn: .4f} м/с\n")
 
-# # Счетчик превышений порога 0.1 градуса
-# threshold = 0.1
-# count_roll = np.sum(np.abs(diff_roll) > threshold)
-# count_pitch = np.sum(np.abs(diff_pitch) > threshold)
-# count_yaw = np.sum(np.abs(diff_yaw) > threshold)
 
-# # Вывод результатов
-# print("\nМаксимальные отклонения:")
-# print(f"Крен: {max_roll:.4f} град | Превышений {threshold}°: {count_roll}")
-# print(f"Тангаж: {max_pitch:.4f} град | Превышений {threshold}°: {count_pitch}")
-# print(f"Курс: {max_yaw:.4f} град | Превышений {threshold}°: {count_yaw}\n")
 
 # =============================================
 # График траекторий в координатах
