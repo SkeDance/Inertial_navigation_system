@@ -412,7 +412,7 @@ int main()
     }
     int type;
     
-    cout << "Укажите комплект чувтсивтельных элементов\n 0) Идеальный алгоритм\n 1) БЧЭ400\n 2) ОИУС200 и АК-6\n 3)LC_AL-300A и QA3000-030";
+    cout << "Укажите комплект чувтсивтельных элементов\n 0) Идеальный алгоритм\n 1) БЧЭ1000\n 2) ОИУС501 и АК-6\n 3)LC_AL-300A и QA3000-030";
     cin >> type;
 
     switch (type)
@@ -429,34 +429,34 @@ int main()
             break;
         }
         case 1:{
-            cout << "БЧЭ400" << endl;
-            d_a = 1 * g * pow(10, -3);      
-            w_dr = 1 * 0.1 / 3600;           
+            cout << "БЧЭ1000" << endl;
+            d_a = 0.3 * g * pow(10, -3);      
+            w_dr = DegreesToRads(0.005 / 3600.0);           
             
-            w_M = 0.00020;                    
-            a_M = 0.00050;                    
+            w_M = 0.00010;                    
+            a_M = 0.00010;                    
             
             err_Neort = 0.00010;             
             break;
         }
         case 2:{
-            cout << "ОИУС200 и АК-6" << endl;
+            cout << "ОИУС501 и АК-6" << endl;
             d_a = 60 * g * pow(10, -6);      
-            w_dr = 1 * 0.2 / 3600;           
+            w_dr = DegreesToRads(0.03 / 3600.0);
             
-            w_M = 0.00030;                    
+            w_M = 0.00020;                    
             a_M = 0.00020;                    
             
             err_Neort = 0.00010;             
             break;
         }
         case 3:{
-            cout << "LC_AL-300A и QA3000-030 " << endl;
+            cout << "LC_AL-710A и QA3000-030 " << endl;
             d_a = 40 * g * pow(10, -6);     
-            w_dr = 1 * 0.1 / 3600;           
+            w_dr = DegreesToRads(0.007 / 3600.0);
             
-            w_M = 0.00020;                    
-            a_M = 0.00008;                    
+            w_M = 0.000005;                    
+            a_M = 0.000080;                    
             
             err_Neort = 0.00010;             
             break;
@@ -564,11 +564,6 @@ int main()
         {
             if (alignment_flag == 0)
             {   
-                // Начальная ошибка курса для каждого комплекта
-                cout << atan((0.1 / 3600.0) / (15.0 * cos(fi_0))) << endl;
-                cout << atan((0.2 / 3600.0) / (15.0 * cos(fi_0))) << endl;
-                cout << atan((0.1 / 3600.0) / (15.0 * cos(fi_0))) << endl;
-
                 // Добавление ошибок 
                 addErrorsDUS(ErrorsMatrixDUS, Gyro_matrix_BL, Gyro_matrix_BL_E);
                 addErrorsAcc(ErrorsMatrixAcc, Acc_matrix_BL, Acc_matrix_BL_E);
@@ -590,7 +585,7 @@ int main()
                 // calculate angular velocity
                 wE = -VN / (R_fi + H);                                 // rad/s
                 wN = VE / (R_lambda + H) + U * cos(fi_0);              // rad/s
-                wUp = VE / (R_lambda + H) * tan(fi_0) + U * sin(fi_0); // rad/s
+                wUp = VE / (R_lambda + H) * tan(fi_0) + U * sin(fi); // rad/s
 
                 fi = getFi(VN);         // rads
                 lambda = getLambda(VE); // rads
@@ -645,7 +640,7 @@ int main()
                 aUPk = ((-wE * VN) + (wN * VE) + (U * cos(fi) * VE - g));
 
                 R_fi = (R_Earth * (1 - pow(ECC, 2))) / pow(1 - pow(ECC, 2) * pow(sin(fi), 2), 3.0 / 2.0);
-                R_lambda = (R_Earth) / pow(1 - pow(ECC, 2) * pow(sin(fi_0), 2), 1.0 / 2.0);
+                R_lambda = (R_Earth) / pow(1 - pow(ECC, 2) * pow(sin(fi), 2), 1.0 / 2.0);
 
                 // calculate angular velocity
                 wE = -VN / (R_fi + H);                                 // rad/s
