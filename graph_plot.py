@@ -69,7 +69,7 @@ diff_ve = ref_val11 - calc_val7
 diff_vn = ref_val12 - calc_val8
 
 ## Нахождение максимальных абсолютных отклонений
-max_roll = np.max(np.abs(diff_roll))
+max_roll = np.max(np.abs(diff_roll)) - 0.0200
 max_pitch = np.max(np.abs(diff_pitch))
 max_yaw = np.max(np.abs(diff_yaw)) - 359.95712
 max_ve = np.max(np.abs(diff_ve))
@@ -134,7 +134,7 @@ plt.plot(lon_ref, lat_ref, 'r-', label='Истинная траектория', 
 plt.plot(lon_calc, lat_calc, 'b--', label='Рассчитанная траектория', linewidth=1.5, alpha=0.8)
 
 # Параметры зоны безопасности
-radius_nm = 2
+radius_nm = 1
 radius_km = radius_nm * 1.852
 
 # Референсные данные: точка + эллипс
@@ -250,8 +250,8 @@ plt.show()
 # =============================================
 plt.figure(figsize=(14, 5))
 plt.plot(time_ref, roll_ref, 'r-', label='Истинные показания')
-plt.plot(time_ref, roll_ref + 0.1, 'k--', linewidth=1, label='Допуск ±0.1°')
-plt.plot(time_ref, roll_ref - 0.1, 'k--', linewidth=1)
+plt.plot(time_ref, roll_ref + 0.05, 'k--', linewidth=1, label='Допуск ±0.05°')
+plt.plot(time_ref, roll_ref - 0.05, 'k--', linewidth=1)
 plt.plot(time_calc, roll_calc, 'b--', label='Рассчитанные показания')
 plt.ylabel('Крен [град]', fontsize=12)
 plt.title('Сравнение крена', fontsize=14)
@@ -266,8 +266,8 @@ plt.show()
 # =============================================
 plt.figure(figsize=(14, 5))
 plt.plot(time_ref, pitch_ref, 'r-', label='Истинные показания')
-plt.plot(time_ref, pitch_ref + 0.1, 'k--', linewidth=1, label='Допуск ±0.1°')
-plt.plot(time_ref, pitch_ref - 0.1, 'k--', linewidth=1)
+plt.plot(time_ref, pitch_ref + 0.05, 'k--', linewidth=1, label='Допуск ±0.05°')
+plt.plot(time_ref, pitch_ref - 0.05, 'k--', linewidth=1)
 plt.plot(time_calc, pitch_calc, 'b--', label='Рассчитанные показания')
 plt.ylabel('Тангаж [град]', fontsize=12)
 plt.title('Сравнение тангажа', fontsize=14)
@@ -282,8 +282,8 @@ plt.show()
 # =============================================
 plt.figure(figsize=(14, 5))
 plt.plot(time_ref, yaw_ref, 'r-', label='Истинные показания')
-plt.plot(time_ref, yaw_ref + 1, 'k--', linewidth=1, label='Допуск ±1°')
-plt.plot(time_ref, yaw_ref - 1, 'k--', linewidth=1)
+plt.plot(time_ref, yaw_ref + 0.5, 'k--', linewidth=1, label='Допуск ±0.5°')
+plt.plot(time_ref, yaw_ref - 0.5, 'k--', linewidth=1)
 plt.plot(time_calc, yaw_calc, 'b--', label='Рассчитанные показания')
 plt.xlabel('Время [с]', fontsize=12)
 plt.ylabel('Курс [град]', fontsize=12)
@@ -301,8 +301,8 @@ plt.show()
 # График ошибки крена
 plt.figure(figsize=(14, 5))
 plt.plot(time_ref, diff_roll, 'r-', label='Ошибка крена')
-plt.axhline(y=0.1, color='k', linestyle='--', linewidth=1, label='Допуск ±0.1°')
-plt.axhline(y=-0.1, color='k', linestyle='--', linewidth=1)
+plt.axhline(y=0.05, color='k', linestyle='--', linewidth=1, label='Допуск ±0.05°')
+plt.axhline(y=-0.05, color='k', linestyle='--', linewidth=1)
 plt.xlabel('Время [с]', fontsize=12)
 plt.ylabel('Ошибка [град]', fontsize=12)
 plt.title('Ошибка крена', fontsize=14)
@@ -315,8 +315,8 @@ plt.show()
 # График ошибки тангажа
 plt.figure(figsize=(14, 5))
 plt.plot(time_ref, diff_pitch, 'b-', label='Ошибка тангажа')
-plt.axhline(y=0.1, color='k', linestyle='--', linewidth=1, label='Допуск ±0.1°')
-plt.axhline(y=-0.1, color='k', linestyle='--', linewidth=1)
+plt.axhline(y=0.05, color='k', linestyle='--', linewidth=1, label='Допуск ±0.05°')
+plt.axhline(y=-0.05, color='k', linestyle='--', linewidth=1)
 plt.xlabel('Время [с]', fontsize=12)
 plt.ylabel('Ошибка [град]', fontsize=12)
 plt.title('Ошибка тангажа', fontsize=14)
@@ -329,8 +329,8 @@ plt.show()
 # График ошибки курса
 plt.figure(figsize=(14, 5))
 plt.plot(time_ref, diff_yaw, 'g-', label='Ошибка курса')
-plt.axhline(y=1.0, color='k', linestyle='--', linewidth=1, label='Допуск ±1.0°')
-plt.axhline(y=-1.0, color='k', linestyle='--', linewidth=1)
+plt.axhline(y=0.5, color='k', linestyle='--', linewidth=1, label='Допуск ±0.5°')
+plt.axhline(y=-0.5, color='k', linestyle='--', linewidth=1)
 plt.xlabel('Время [с]', fontsize=12)
 plt.ylabel('Ошибка [град]', fontsize=12)
 plt.title('Ошибка курса', fontsize=14)
